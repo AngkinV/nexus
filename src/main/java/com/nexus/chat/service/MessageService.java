@@ -1,0 +1,154 @@
+package com.nexus.chat.service;
+
+import com.nexus.chat.dto.MessageDTO;
+import com.nexus.chat.model.ChatMember;
+import com.nexus.chat.model.Message;
+import com.nexus.chat.model.MessageReadStatus;
+import com.nexus.chat.model.User;
+import com.nexus.chat.repository.ChatMemberRepository;
+import com.nexus.chat.repository.MessageReadStatusRepository;
+import com.nexus.chat.repository.MessageRepository;
+import com.nexus.chat.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class MessageService {
+
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ChatMemberRepository chatMemberRepository;
+    private final MessageReadStatusRepository messageReadStatusRepository;
+
+    @Transactional
+    public MessageDTO sendMessage(Long chatId, Long senderId, String content, Message.MessageType messageType,
+            String fileUrl) {
+        // Verify sender is a member
+        if (!chatMemberRepository.existsByChatIdAndUserId(chatId, senderId)) {
+            throw new RuntimeException("User is not a member of this chat");
+        }
+
+        // Create message
+        Message message = new Message();
+        message.setChatId(chatId);
+        message.setSenderId(senderId);
+        message.setContent(content);
+        message.setMessageType(messageType);
+        message.setFileUrl(fileUrl);
+
+        Message savedMessage = messageRepository.save(message);
+
+        // Create read status for all chat members except sender
+        List<ChatMember> members = chatMemberRepository.findByChatId(chatId);
+        for (ChatMember member : members) {
+            if (!member.getUserId().equals(senderId)) {
+                // Create read status
+                MessageReadStatus readStatus = new MessageReadStatus();
+                readStatus.setMessageId(savedMessage.getId());
+                readStatus.setUserId(member.getUserId());
+                readStatus.setIsRead(false);
+                messageReadStatusRepository.save(readStatus);
+
+                // Increment unread count
+                member.setUnreadCount(member.getUnreadCount() + 1);
+                chatMemberRepository.save(member);
+            }
+        }
+
+        return mapToDTO(savedMessage);
+    }
+
+    public List<MessageDTO> getChatMessages(Long chatId, Long userId, int page, int size) {
+        // Verify user is a member
+        if (!chatMemberRepository.existsByChatIdAndUserId(chatId, userId)) {
+            throw new RuntimeException("User is not a member of this chat");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Message> messages = messageRepository.findByChatIdOrderByCreatedAtDesc(chatId, pageable);
+
+        return messages.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void markMessageAsRead(Long messageId, Long userId) {
+        MessageReadStatus readStatus = messageReadStatusRepository
+                .findByMessageIdAndUserId(messageId, userId)
+                .orElseThrow(() -> new RuntimeException("Read status not found"));
+
+        if (!readStatus.getIsRead()) {
+            readStatus.setIsRead(true);
+            readStatus.setReadAt(LocalDateTime.now());
+            messageReadStatusRepository.save(readStatus);
+
+            // Decrement unread count
+            Message message = messageRepository.findById(messageId).orElse(null);
+            if (message != null) {
+                ChatMember member = chatMemberRepository
+                        .findByChatIdAndUserId(message.getChatId(), userId)
+                        .orElse(null);
+                if (member != null && member.getUnreadCount() > 0) {
+                    member.setUnreadCount(member.getUnreadCount() - 1);
+                    chatMemberRepository.save(member);
+                }
+            }
+        }
+    }
+
+    @Transactional
+    public void markChatMessagesAsRead(Long chatId, Long userId) {
+        List<Message> messages = messageRepository.findByChatIdOrderByCreatedAtDesc(chatId);
+        for (Message message : messages) {
+            if (!message.getSenderId().equals(userId)) {
+                MessageReadStatus readStatus = messageReadStatusRepository
+                        .findByMessageIdAndUserId(message.getId(), userId)
+                        .orElse(null);
+                if (readStatus != null && !readStatus.getIsRead()) {
+                    readStatus.setIsRead(true);
+                    readStatus.setReadAt(LocalDateTime.now());
+                    messageReadStatusRepository.save(readStatus);
+                }
+            }
+        }
+
+        // Reset unread count
+        ChatMember member = chatMemberRepository.findByChatIdAndUserId(chatId, userId).orElse(null);
+        if (member != null) {
+            member.setUnreadCount(0);
+            chatMemberRepository.save(member);
+        }
+    }
+
+    private MessageDTO mapToDTO(Message message) {
+        User sender = userRepository.findById(message.getSenderId()).orElse(null);
+
+        MessageDTO dto = new MessageDTO();
+        dto.setId(message.getId());
+        dto.setChatId(message.getChatId());
+        dto.setSenderId(message.getSenderId());
+        dto.setContent(message.getContent());
+        dto.setMessageType(message.getMessageType());
+        dto.setFileUrl(message.getFileUrl());
+        dto.setCreatedAt(message.getCreatedAt());
+
+        if (sender != null) {
+            dto.setSenderNickname(sender.getNickname());
+            dto.setSenderAvatar(sender.getAvatarUrl());
+        }
+
+        return dto;
+    }
+
+}
