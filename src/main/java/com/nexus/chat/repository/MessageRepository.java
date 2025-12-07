@@ -10,11 +10,16 @@ import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    
+
     Page<Message> findByChatIdOrderByCreatedAtDesc(Long chatId, Pageable pageable);
-    
+
     List<Message> findByChatIdOrderByCreatedAtDesc(Long chatId);
-    
+
     Long countByChatId(Long chatId);
-    
+
+    /**
+     * Count messages sent by a user
+     */
+    long countBySenderId(Long senderId);
+
 }

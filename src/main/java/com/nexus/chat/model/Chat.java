@@ -27,8 +27,20 @@ public class Chat {
     @Column(length = 100)
     private String name;
 
+    @Column(length = 200)
+    private String description;
+
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    private String avatarUrl;
+
+    @Column(name = "is_private")
+    private Boolean isPrivate = false;
+
     @Column(name = "created_by", nullable = false)
     private Long createdBy;
+
+    @Column(name = "member_count")
+    private Integer memberCount = 1;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

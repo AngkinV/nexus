@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "chat_members", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"chat_id", "user_id"})
+        @UniqueConstraint(columnNames = { "chat_id", "user_id" })
 })
 @Data
 @NoArgsConstructor
@@ -27,8 +27,16 @@ public class ChatMember {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private MemberRole role = MemberRole.member;
+
     @Column(name = "is_admin")
     private Boolean isAdmin = false;
+
+    public enum MemberRole {
+        owner, admin, member
+    }
 
     @Column(name = "unread_count")
     private Integer unreadCount = 0;

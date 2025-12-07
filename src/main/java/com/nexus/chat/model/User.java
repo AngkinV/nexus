@@ -38,6 +38,9 @@ public class User {
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
 
+    @Column(length = 150)
+    private String bio;
+
     @Column(name = "is_online")
     private Boolean isOnline = false;
 

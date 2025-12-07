@@ -1,8 +1,9 @@
 package com.nexus.chat.websocket;
 
-import com.nexus.chat.dto.MessageDTO;
-import com.nexus.chat.dto.WebSocketMessage;
+import com.nexus.chat.dto.*;
 import com.nexus.chat.model.Message;
+import com.nexus.chat.service.ContactService;
+import com.nexus.chat.service.GroupService;
 import com.nexus.chat.service.MessageService;
 import com.nexus.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +12,12 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.util.List;
 import java.util.Map;
 
+/**
+ * WebSocket Controller for real-time messaging and events
+ */
 @Controller
 @RequiredArgsConstructor
 public class WebSocketController {
@@ -20,7 +25,12 @@ public class WebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageService messageService;
     private final UserService userService;
+    private final ContactService contactService;
+    private final GroupService groupService;
 
+    /**
+     * Handle sending chat messages (direct and group)
+     */
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload Map<String, Object> payload) {
         try {
@@ -47,6 +57,9 @@ public class WebSocketController {
         }
     }
 
+    /**
+     * Handle user status updates (online/offline)
+     */
     @MessageMapping("/user.status")
     public void updateUserStatus(@Payload Map<String, Object> payload) {
         try {
@@ -61,11 +74,17 @@ public class WebSocketController {
 
             // Broadcast to all users
             messagingTemplate.convertAndSend("/topic/users", wsMessage);
+
+            // Notify user's contacts about status change
+            contactService.notifyContactsOfStatusChange(userId, isOnline);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Handle typing indicator
+     */
     @MessageMapping("/chat.typing")
     public void userTyping(@Payload Map<String, Object> payload) {
         try {
@@ -81,6 +100,202 @@ public class WebSocketController {
             messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle message read status
+     */
+    @MessageMapping("/message.read")
+    public void messageRead(@Payload Map<String, Object> payload) {
+        try {
+            Long chatId = Long.valueOf(payload.get("chatId").toString());
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            Long messageId = payload.get("messageId") != null
+                    ? Long.valueOf(payload.get("messageId").toString())
+                    : null;
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.MESSAGE_READ,
+                    Map.of("chatId", chatId, "userId", userId, "messageId", messageId != null ? messageId : "all"));
+
+            // Broadcast to chat room
+            messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle group creation
+     */
+    @MessageMapping("/group.create")
+    public void createGroup(@Payload Map<String, Object> payload) {
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            String name = (String) payload.get("name");
+            String description = (String) payload.get("description");
+            Boolean isPrivate = (Boolean) payload.getOrDefault("isPrivate", false);
+            @SuppressWarnings("unchecked")
+            List<Long> memberIds = (List<Long>) payload.get("memberIds");
+
+            CreateGroupRequest request = new CreateGroupRequest();
+            request.setName(name);
+            request.setDescription(description);
+            request.setIsPrivate(isPrivate);
+            request.setMemberIds(memberIds);
+
+            GroupDTO group = groupService.createGroup(userId, request);
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.GROUP_CREATED,
+                    group);
+
+            // Notify creator
+            messagingTemplate.convertAndSend("/user/" + userId + "/queue/groups", wsMessage);
+
+            // Notify all members
+            if (memberIds != null) {
+                for (Long memberId : memberIds) {
+                    if (!memberId.equals(userId)) {
+                        messagingTemplate.convertAndSend("/user/" + memberId + "/queue/groups", wsMessage);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(payload.get("userId"), "Failed to create group: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle joining a group
+     */
+    @MessageMapping("/group.join")
+    public void joinGroup(@Payload Map<String, Object> payload) {
+        try {
+            Long groupId = Long.valueOf(payload.get("groupId").toString());
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            Long adminUserId = Long.valueOf(payload.get("adminUserId").toString());
+
+            groupService.addMembers(groupId, adminUserId, List.of(userId));
+
+            UserDTO user = userService.getUserById(userId);
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.GROUP_MEMBER_JOINED,
+                    Map.of("groupId", groupId, "user", user));
+
+            // Broadcast to group
+            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle leaving a group
+     */
+    @MessageMapping("/group.leave")
+    public void leaveGroup(@Payload Map<String, Object> payload) {
+        try {
+            Long groupId = Long.valueOf(payload.get("groupId").toString());
+            Long userId = Long.valueOf(payload.get("userId").toString());
+
+            groupService.leaveGroup(groupId, userId);
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.GROUP_MEMBER_LEFT,
+                    Map.of("groupId", groupId, "userId", userId));
+
+            // Broadcast to group
+            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle group message
+     */
+    @MessageMapping("/group.message")
+    public void sendGroupMessage(@Payload Map<String, Object> payload) {
+        try {
+            Long groupId = Long.valueOf(payload.get("groupId").toString());
+            Long senderId = Long.valueOf(payload.get("senderId").toString());
+            String content = (String) payload.get("content");
+            String messageTypeStr = (String) payload.get("messageType");
+
+            Message.MessageType messageType = messageTypeStr != null
+                    ? Message.MessageType.valueOf(messageTypeStr)
+                    : Message.MessageType.text;
+
+            MessageDTO message = messageService.sendMessage(groupId, senderId, content, messageType, null);
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.GROUP_MESSAGE,
+                    message);
+
+            // Broadcast to group
+            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle adding contact
+     */
+    @MessageMapping("/contact.add")
+    public void addContact(@Payload Map<String, Object> payload) {
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            Long contactUserId = Long.valueOf(payload.get("contactUserId").toString());
+
+            ContactDTO contact = contactService.addContact(userId, contactUserId);
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.CONTACT_ADDED,
+                    contact);
+
+            // Notify user
+            messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(payload.get("userId"), "Failed to add contact: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle removing contact
+     */
+    @MessageMapping("/contact.remove")
+    public void removeContact(@Payload Map<String, Object> payload) {
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            Long contactUserId = Long.valueOf(payload.get("contactUserId").toString());
+
+            contactService.removeContact(userId, contactUserId);
+
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.CONTACT_REMOVED,
+                    Map.of("contactId", contactUserId));
+
+            // Notify user
+            messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Send error message to user
+     */
+    private void sendError(Object userId, String errorMessage) {
+        if (userId != null) {
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.ERROR,
+                    Map.of("message", errorMessage));
+            messagingTemplate.convertAndSend("/user/" + userId + "/queue/errors", wsMessage);
         }
     }
 

@@ -4,15 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+/**
+ * DTO for updating group information
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateGroupRequest {
+public class UpdateGroupRequest {
     private String name;
     private String description;
     private String avatar;
-    private Boolean isPrivate = false;
-    private List<Long> memberIds;
+    private Boolean isPrivate;
 }

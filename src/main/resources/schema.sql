@@ -9,12 +9,27 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     nickname VARCHAR(100) NOT NULL,
     avatar_url MEDIUMTEXT,
+    bio VARCHAR(150) DEFAULT NULL,
     is_online BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_username (username),
     INDEX idx_email (email),
-    INDEX idx_is_online (is_online)
+    INDEX idx_is_online (is_online),
+    FULLTEXT INDEX idx_search (username, nickname, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User Privacy Settings Table
+CREATE TABLE IF NOT EXISTS user_privacy_settings (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL UNIQUE,
+    show_online_status BOOLEAN DEFAULT TRUE,
+    show_last_seen BOOLEAN DEFAULT TRUE,
+    show_email BOOLEAN DEFAULT FALSE,
+    show_phone BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Contacts Table
@@ -29,17 +44,22 @@ CREATE TABLE IF NOT EXISTS contacts (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Chats Table
+-- Chats Table (supports both direct and group chats)
 CREATE TABLE IF NOT EXISTS chats (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     type ENUM('direct', 'group') NOT NULL,
     name VARCHAR(100),
+    description VARCHAR(200) DEFAULT NULL,
+    avatar_url MEDIUMTEXT,
+    is_private BOOLEAN DEFAULT FALSE,
     created_by BIGINT NOT NULL,
+    member_count INT DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_type (type),
-    INDEX idx_last_message_at (last_message_at)
+    INDEX idx_last_message_at (last_message_at),
+    INDEX idx_is_private (is_private)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Chat Members Table
@@ -47,6 +67,7 @@ CREATE TABLE IF NOT EXISTS chat_members (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     chat_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
+    role ENUM('owner', 'admin', 'member') DEFAULT 'member',
     is_admin BOOLEAN DEFAULT FALSE,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     unread_count INT DEFAULT 0,

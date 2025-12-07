@@ -1,0 +1,158 @@
+package com.nexus.chat.controller;
+
+import com.nexus.chat.dto.*;
+import com.nexus.chat.service.GroupService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST Controller for Group (Chat Group) management
+ */
+@RestController
+@RequestMapping("/api/groups")
+@RequiredArgsConstructor
+public class GroupController {
+
+    private final GroupService groupService;
+
+    /**
+     * Create a new group
+     * POST /api/groups?userId={userId}
+     */
+    @PostMapping
+    public ResponseEntity<GroupDTO> createGroup(
+            @RequestParam Long userId,
+            @RequestBody CreateGroupRequest request) {
+        try {
+            GroupDTO group = groupService.createGroup(userId, request);
+            return ResponseEntity.ok(group);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Get group by ID
+     * GET /api/groups/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<GroupDTO> getGroupById(@PathVariable Long id) {
+        try {
+            GroupDTO group = groupService.getGroupById(id);
+            return ResponseEntity.ok(group);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Update group information
+     * PUT /api/groups/{id}?userId={userId}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<GroupDTO> updateGroup(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestBody UpdateGroupRequest request) {
+        try {
+            GroupDTO group = groupService.updateGroup(id, userId, request);
+            return ResponseEntity.ok(group);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Delete/disband group
+     * DELETE /api/groups/{id}?userId={userId}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGroup(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        try {
+            groupService.deleteGroup(id, userId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Add members to group
+     * POST /api/groups/{id}/members?userId={userId}
+     */
+    @PostMapping("/{id}/members")
+    public ResponseEntity<Void> addMembers(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestBody AddMembersRequest request) {
+        try {
+            groupService.addMembers(id, userId, request.getUserIds());
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Remove member from group
+     * DELETE /api/groups/{id}/members/{memberId}?userId={userId}
+     */
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> removeMember(
+            @PathVariable Long id,
+            @PathVariable Long memberId,
+            @RequestParam Long userId) {
+        try {
+            groupService.removeMember(id, userId, memberId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Leave group
+     * POST /api/groups/{id}/leave?userId={userId}
+     */
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<Void> leaveGroup(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        try {
+            groupService.leaveGroup(id, userId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Get group members
+     * GET /api/groups/{id}/members
+     */
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<UserDTO>> getGroupMembers(@PathVariable Long id) {
+        try {
+            List<UserDTO> members = groupService.getGroupMembers(id);
+            return ResponseEntity.ok(members);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Get user's groups
+     * GET /api/users/{userId}/groups
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<GroupDTO>> getUserGroups(@PathVariable Long userId) {
+        List<GroupDTO> groups = groupService.getUserGroups(userId);
+        return ResponseEntity.ok(groups);
+    }
+
+}
