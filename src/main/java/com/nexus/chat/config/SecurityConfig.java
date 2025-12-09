@@ -32,6 +32,12 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/ws/**", "/error").permitAll()
+                .requestMatchers("/api/users/**").permitAll()
+                .requestMatchers("/api/contacts/**").permitAll()
+                .requestMatchers("/api/chats/**").permitAll()
+                .requestMatchers("/api/messages/**").permitAll()
+                .requestMatchers("/api/groups/**").permitAll()
+                .requestMatchers("/api/files/**").permitAll()
                 .anyRequest().authenticated()
             );
 
