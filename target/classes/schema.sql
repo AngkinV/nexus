@@ -121,3 +121,96 @@ CREATE TABLE IF NOT EXISTS file_uploads (
     INDEX idx_message_id (message_id),
     INDEX idx_upload_complete (upload_complete)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 1. 用户表新增字段 (个人资料背景)
+  -- ============================================
+  ALTER TABLE users
+  ADD COLUMN profile_background TEXT AFTER bio;
+
+  -- ============================================
+  -- 2. 用户社交链接表 (新建)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS user_social_links (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      platform VARCHAR(50) NOT NULL,
+      url VARCHAR(500) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_user_platform (user_id, platform),
+      INDEX idx_user_id (user_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 3. 用户安全设置表 (新建 - 两步验证等)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS user_security_settings (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL UNIQUE,
+      two_factor_enabled BOOLEAN DEFAULT FALSE,
+      two_factor_secret VARCHAR(255) DEFAULT NULL,
+      backup_codes TEXT DEFAULT NULL,
+      password_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 4. 用户会话表 (新建 - 活跃设备管理)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS user_sessions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      session_token VARCHAR(255) NOT NULL UNIQUE,
+      device_name VARCHAR(100) DEFAULT NULL,
+      device_type ENUM('desktop', 'mobile', 'tablet', 'unknown') DEFAULT 'unknown',
+      browser VARCHAR(100) DEFAULT NULL,
+      ip_address VARCHAR(45) DEFAULT NULL,
+      location VARCHAR(200) DEFAULT NULL,
+      is_current BOOLEAN DEFAULT FALSE,
+      last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_user_id (user_id),
+      INDEX idx_session_token (session_token),
+      INDEX idx_expires_at (expires_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 5. 登录历史表 (新建 - 登录记录)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS login_history (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      success BOOLEAN DEFAULT TRUE,
+      ip_address VARCHAR(45) DEFAULT NULL,
+      location VARCHAR(200) DEFAULT NULL,
+      device VARCHAR(200) DEFAULT NULL,
+      browser VARCHAR(100) DEFAULT NULL,
+      failure_reason VARCHAR(255) DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_user_id (user_id),
+      INDEX idx_created_at (created_at),
+      INDEX idx_success (success)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 6. 用户活动记录表 (新建 - 最近活动)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS user_activities (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      activity_type ENUM('message', 'contact', 'group', 'login', 'profile_update') NOT NULL,
+      description TEXT DEFAULT NULL,
+      related_id BIGINT DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_user_id (user_id),
+      INDEX idx_activity_type (activity_type),
+      INDEX idx_created_at (created_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
