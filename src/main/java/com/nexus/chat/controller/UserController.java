@@ -219,4 +219,123 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Update profile background
+     * PUT /api/users/{id}/background
+     */
+    @PutMapping("/{id}/background")
+    public ResponseEntity<Map<String, String>> updateBackground(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        try {
+            String background = request.get("background");
+            if (background == null || background.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            String updated = userService.updateProfileBackground(id, background);
+            return ResponseEntity.ok(Map.of("profileBackground", updated));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Get user's social links
+     * GET /api/users/{id}/social-links
+     */
+    @GetMapping("/{id}/social-links")
+    public ResponseEntity<List<SocialLinkDTO>> getSocialLinks(@PathVariable Long id) {
+        try {
+            List<SocialLinkDTO> links = userService.getSocialLinks(id);
+            return ResponseEntity.ok(links);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Add or update a social link
+     * POST /api/users/{id}/social-links
+     */
+    @PostMapping("/{id}/social-links")
+    public ResponseEntity<SocialLinkDTO> addSocialLink(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        try {
+            String platform = request.get("platform");
+            String url = request.get("url");
+            if (platform == null || url == null || platform.isEmpty() || url.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            SocialLinkDTO link = userService.saveSocialLink(id, platform, url);
+            return ResponseEntity.ok(link);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Delete a social link
+     * DELETE /api/users/{id}/social-links/{platform}
+     */
+    @DeleteMapping("/{id}/social-links/{platform}")
+    public ResponseEntity<Void> deleteSocialLink(
+            @PathVariable Long id,
+            @PathVariable String platform) {
+        try {
+            userService.deleteSocialLink(id, platform);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Batch update social links (replace all)
+     * PUT /api/users/{id}/social-links
+     */
+    @PutMapping("/{id}/social-links")
+    public ResponseEntity<Map<String, String>> updateSocialLinks(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> links) {
+        try {
+            Map<String, String> updated = userService.updateSocialLinks(id, links);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Get user's recent activities
+     * GET /api/users/{id}/activities
+     */
+    @GetMapping("/{id}/activities")
+    public ResponseEntity<List<ActivityDTO>> getUserActivities(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "20") int limit) {
+        try {
+            List<ActivityDTO> activities = userService.getUserActivities(id, limit);
+            return ResponseEntity.ok(activities);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Get friend activities (activity feed)
+     * GET /api/users/{id}/friend-activities
+     */
+    @GetMapping("/{id}/friend-activities")
+    public ResponseEntity<List<ActivityDTO>> getFriendActivities(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "20") int limit) {
+        try {
+            List<ActivityDTO> activities = userService.getFriendActivities(id, limit);
+            return ResponseEntity.ok(activities);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }

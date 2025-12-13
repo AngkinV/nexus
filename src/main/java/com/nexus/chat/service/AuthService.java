@@ -51,7 +51,11 @@ public class AuthService {
                 savedUser.getId(),
                 savedUser.getUsername(),
                 savedUser.getNickname(),
-                savedUser.getAvatarUrl());
+                savedUser.getAvatarUrl(),
+                savedUser.getEmail(),
+                savedUser.getPhone(),
+                savedUser.getBio(),
+                savedUser.getProfileBackground());
     }
 
     @Transactional
@@ -78,7 +82,11 @@ public class AuthService {
                 user.getId(),
                 user.getUsername(),
                 user.getNickname(),
-                user.getAvatarUrl());
+                user.getAvatarUrl(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getBio(),
+                user.getProfileBackground());
     }
 
     @Transactional

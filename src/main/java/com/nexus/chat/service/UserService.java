@@ -3,6 +3,9 @@ package com.nexus.chat.service;
 import com.nexus.chat.dto.*;
 import com.nexus.chat.model.User;
 import com.nexus.chat.model.UserPrivacySettings;
+import com.nexus.chat.model.UserSocialLink;
+import com.nexus.chat.model.UserSecuritySettings;
+import com.nexus.chat.model.UserActivity;
 import com.nexus.chat.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +17,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -27,6 +32,10 @@ public class UserService {
     private final ContactRepository contactRepository;
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
+    private final UserSocialLinkRepository socialLinkRepository;
+    private final UserSecuritySettingsRepository securitySettingsRepository;
+    private final UserSessionRepository sessionRepository;
+    private final UserActivityRepository activityRepository;
 
     // Avatar upload directory (can be configured)
     private static final String AVATAR_UPLOAD_DIR = "uploads/avatars/";
@@ -91,6 +100,7 @@ public class UserService {
         profile.setPhone(user.getPhone());
         profile.setAvatarUrl(user.getAvatarUrl());
         profile.setBio(user.getBio());
+        profile.setProfileBackground(user.getProfileBackground());
         profile.setIsOnline(user.getIsOnline());
         profile.setLastSeen(user.getLastSeen());
         profile.setCreatedAt(user.getCreatedAt());
@@ -105,6 +115,15 @@ public class UserService {
         profile.setContactCount((long) contactRepository.findByUserId(userId).size());
         profile.setGroupCount(chatRepository.countUserGroups(userId));
         profile.setMessageCount(messageRepository.countBySenderId(userId));
+
+        // Social links
+        profile.setSocialLinks(getSocialLinksMap(userId));
+
+        // Security status
+        UserSecuritySettings security = securitySettingsRepository.findByUserId(userId).orElse(null);
+        profile.setTwoFactorEnabled(security != null && security.getTwoFactorEnabled());
+        profile.setPasswordStrength(calculatePasswordStrength(security));
+        profile.setActiveSessions((int) sessionRepository.countByUserId(userId));
 
         return profile;
     }
@@ -332,16 +351,20 @@ public class UserService {
     }
 
     /**
-     * Create default privacy settings for user
+     * Create default privacy settings for user (only if not exists)
      */
     private UserPrivacySettings createDefaultPrivacySettings(Long userId) {
-        UserPrivacySettings settings = new UserPrivacySettings();
-        settings.setUserId(userId);
-        settings.setShowOnlineStatus(true);
-        settings.setShowLastSeen(true);
-        settings.setShowEmail(false);
-        settings.setShowPhone(false);
-        return privacySettingsRepository.save(settings);
+        // Check if already exists to avoid duplicate entry error
+        return privacySettingsRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    UserPrivacySettings settings = new UserPrivacySettings();
+                    settings.setUserId(userId);
+                    settings.setShowOnlineStatus(true);
+                    settings.setShowLastSeen(true);
+                    settings.setShowEmail(false);
+                    settings.setShowPhone(false);
+                    return privacySettingsRepository.save(settings);
+                });
     }
 
     private UserDTO mapToDTO(User user) {
@@ -352,6 +375,149 @@ public class UserService {
                 user.getAvatarUrl(),
                 user.getIsOnline(),
                 user.getLastSeen());
+    }
+
+    /**
+     * Get social links as a map
+     */
+    private Map<String, String> getSocialLinksMap(Long userId) {
+        List<UserSocialLink> links = socialLinkRepository.findByUserId(userId);
+        Map<String, String> map = new HashMap<>();
+        for (UserSocialLink link : links) {
+            map.put(link.getPlatform(), link.getUrl());
+        }
+        return map;
+    }
+
+    /**
+     * Calculate password strength (simplified)
+     */
+    private Integer calculatePasswordStrength(UserSecuritySettings security) {
+        // Default strength, in production this would be calculated based on password policy
+        return 60;
+    }
+
+    /**
+     * Update profile background
+     */
+    @Transactional
+    public String updateProfileBackground(Long userId, String background) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setProfileBackground(background);
+        userRepository.save(user);
+        return background;
+    }
+
+    /**
+     * Get all social links for a user
+     */
+    public List<SocialLinkDTO> getSocialLinks(Long userId) {
+        return socialLinkRepository.findByUserId(userId).stream()
+                .map(link -> new SocialLinkDTO(
+                        link.getId(),
+                        link.getPlatform(),
+                        link.getUrl(),
+                        link.getCreatedAt()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Add or update a social link
+     */
+    @Transactional
+    public SocialLinkDTO saveSocialLink(Long userId, String platform, String url) {
+        UserSocialLink link = socialLinkRepository.findByUserIdAndPlatform(userId, platform)
+                .orElse(new UserSocialLink());
+
+        link.setUserId(userId);
+        link.setPlatform(platform);
+        link.setUrl(url);
+
+        UserSocialLink saved = socialLinkRepository.save(link);
+        return new SocialLinkDTO(saved.getId(), saved.getPlatform(), saved.getUrl(), saved.getCreatedAt());
+    }
+
+    /**
+     * Delete a social link
+     */
+    @Transactional
+    public void deleteSocialLink(Long userId, String platform) {
+        socialLinkRepository.deleteByUserIdAndPlatform(userId, platform);
+    }
+
+    /**
+     * Update all social links (replace all)
+     */
+    @Transactional
+    public Map<String, String> updateSocialLinks(Long userId, Map<String, String> links) {
+        // Delete all existing links
+        socialLinkRepository.deleteByUserId(userId);
+
+        // Add new links
+        for (Map.Entry<String, String> entry : links.entrySet()) {
+            UserSocialLink link = new UserSocialLink();
+            link.setUserId(userId);
+            link.setPlatform(entry.getKey());
+            link.setUrl(entry.getValue());
+            socialLinkRepository.save(link);
+        }
+
+        return links;
+    }
+
+    /**
+     * Get user's recent activities
+     */
+    public List<ActivityDTO> getUserActivities(Long userId, int limit) {
+        List<UserActivity> activities = activityRepository.findRecentByUserId(userId, limit);
+        return activities.stream()
+                .map(this::mapActivityToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get friend activities (activity feed)
+     */
+    public List<ActivityDTO> getFriendActivities(Long userId, int limit) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<UserActivity> activities = activityRepository.findFriendActivities(userId, pageable);
+        return activities.stream()
+                .map(this::mapActivityToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Record user activity
+     */
+    @Transactional
+    public void recordActivity(Long userId, UserActivity.ActivityType activityType, String description, Long relatedId) {
+        UserActivity activity = new UserActivity();
+        activity.setUserId(userId);
+        activity.setActivityType(activityType);
+        activity.setDescription(description);
+        activity.setRelatedId(relatedId);
+        activityRepository.save(activity);
+    }
+
+    /**
+     * Map UserActivity to ActivityDTO
+     */
+    private ActivityDTO mapActivityToDTO(UserActivity activity) {
+        ActivityDTO dto = new ActivityDTO();
+        dto.setId(activity.getId());
+        dto.setActivityType(activity.getActivityType().name());
+        dto.setDescription(activity.getDescription());
+        dto.setRelatedId(activity.getRelatedId());
+        dto.setCreatedAt(activity.getCreatedAt());
+
+        // Get user info
+        userRepository.findById(activity.getUserId()).ifPresent(user -> {
+            UserDTO userDTO = mapToDTO(user);
+            dto.setUser(userDTO);
+        });
+
+        return dto;
     }
 
 }

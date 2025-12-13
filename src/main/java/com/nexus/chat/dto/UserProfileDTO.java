@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Extended user profile DTO including email, phone, bio and privacy settings
@@ -20,6 +22,7 @@ public class UserProfileDTO {
     private String phone;
     private String avatarUrl;
     private String bio;
+    private String profileBackground;
     private Boolean isOnline;
     private LocalDateTime lastSeen;
     private LocalDateTime createdAt;
@@ -34,4 +37,12 @@ public class UserProfileDTO {
     private Long contactCount;
     private Long groupCount;
     private Long messageCount;
+
+    // Social links (platform -> url)
+    private Map<String, String> socialLinks;
+
+    // Security status
+    private Boolean twoFactorEnabled;
+    private Integer passwordStrength;
+    private Integer activeSessions;
 }
