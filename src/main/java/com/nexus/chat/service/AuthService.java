@@ -3,6 +3,7 @@ package com.nexus.chat.service;
 import com.nexus.chat.dto.AuthResponse;
 import com.nexus.chat.dto.LoginRequest;
 import com.nexus.chat.dto.RegisterRequest;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.User;
 import com.nexus.chat.repository.UserRepository;
 import com.nexus.chat.security.JwtTokenProvider;
@@ -23,12 +24,12 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         // Check if username already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BusinessException("error.auth.username.exists");
         }
 
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BusinessException("error.auth.email.exists");
         }
 
         // Create new user
@@ -64,10 +65,10 @@ public class AuthService {
 
         // Try to find user by username or email
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
-                .orElseThrow(() -> new RuntimeException("Invalid username/email or password"));
+                .orElseThrow(() -> new BusinessException("error.auth.invalid.credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid username/email or password");
+            throw new BusinessException("error.auth.invalid.credentials");
         }
 
         // Update online status
@@ -92,7 +93,7 @@ public class AuthService {
     @Transactional
     public void logout(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
         user.setIsOnline(false);
         userRepository.save(user);
     }

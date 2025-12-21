@@ -35,6 +35,15 @@ public class UserPrivacySettings {
     @Column(name = "show_phone")
     private Boolean showPhone = false;
 
+    /**
+     * 好友验证方式:
+     * DIRECT - 直接同意，无需验证
+     * VERIFY - 需要验证同意
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "friend_request_mode")
+    private FriendRequestMode friendRequestMode = FriendRequestMode.VERIFY;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -43,4 +52,8 @@ public class UserPrivacySettings {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public enum FriendRequestMode {
+        DIRECT,  // 直接同意
+        VERIFY   // 验证同意
+    }
 }

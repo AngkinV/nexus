@@ -4,6 +4,8 @@ import com.nexus.chat.dto.ChatDTO;
 import com.nexus.chat.dto.CreateGroupRequest;
 import com.nexus.chat.dto.MessageDTO;
 import com.nexus.chat.dto.UserDTO;
+import com.nexus.chat.dto.WebSocketMessage;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.Chat;
 import com.nexus.chat.model.ChatMember;
 import com.nexus.chat.model.Message;
@@ -13,6 +15,7 @@ import com.nexus.chat.repository.ChatRepository;
 import com.nexus.chat.repository.MessageRepository;
 import com.nexus.chat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class ChatService {
     private final ChatMemberRepository chatMemberRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public ChatDTO createDirectChat(Long userId, Long contactId) {
@@ -56,7 +60,16 @@ public class ChatService {
         member2.setIsAdmin(false);
         chatMemberRepository.save(member2);
 
-        return mapToDTO(savedChat, userId);
+        ChatDTO chatDTO = mapToDTO(savedChat, userId);
+
+        // Notify the contact about the new chat via WebSocket
+        ChatDTO contactChatDTO = mapToDTO(savedChat, contactId);
+        WebSocketMessage wsMessage = new WebSocketMessage(
+                WebSocketMessage.MessageType.CHAT_CREATED,
+                contactChatDTO);
+        messagingTemplate.convertAndSendToUser(String.valueOf(contactId), "/queue/chats", wsMessage);
+
+        return chatDTO;
     }
 
     @Transactional
@@ -98,11 +111,11 @@ public class ChatService {
 
     public ChatDTO getChatById(Long chatId, Long userId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+                .orElseThrow(() -> new BusinessException("error.chat.not.found"));
 
         // Verify user is a member
         if (!chatMemberRepository.existsByChatIdAndUserId(chatId, userId)) {
-            throw new RuntimeException("User is not a member of this chat");
+            throw new BusinessException("error.chat.not.member");
         }
 
         return mapToDTO(chat, userId);

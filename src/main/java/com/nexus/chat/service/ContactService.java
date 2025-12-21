@@ -1,12 +1,18 @@
 package com.nexus.chat.service;
 
 import com.nexus.chat.dto.ContactDTO;
+import com.nexus.chat.dto.ContactRequestDTO;
 import com.nexus.chat.dto.UserDTO;
 import com.nexus.chat.dto.WebSocketMessage;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.Contact;
+import com.nexus.chat.model.ContactRequest;
+import com.nexus.chat.model.ContactRequest.RequestStatus;
 import com.nexus.chat.model.User;
 import com.nexus.chat.model.UserPrivacySettings;
+import com.nexus.chat.model.UserPrivacySettings.FriendRequestMode;
 import com.nexus.chat.repository.ContactRepository;
+import com.nexus.chat.repository.ContactRequestRepository;
 import com.nexus.chat.repository.UserPrivacySettingsRepository;
 import com.nexus.chat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,29 +29,61 @@ import java.util.stream.Collectors;
 public class ContactService {
 
     private final ContactRepository contactRepository;
+    private final ContactRequestRepository contactRequestRepository;
     private final UserRepository userRepository;
     private final UserPrivacySettingsRepository privacySettingsRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
-     * Add a contact
+     * Add a contact - 根据目标用户的隐私设置决定是直接添加还是发送申请
+     * @return ContactDTO if direct add, null if request sent
      */
     @Transactional
-    public ContactDTO addContact(Long userId, Long contactUserId) {
+    public Object addContact(Long userId, Long contactUserId, String message) {
         // Can't add yourself
         if (userId.equals(contactUserId)) {
-            throw new RuntimeException("Cannot add yourself as a contact");
+            throw new BusinessException("error.contact.self.add");
         }
 
         // Check if contact already exists
         if (contactRepository.existsByUserIdAndContactUserId(userId, contactUserId)) {
-            throw new RuntimeException("Contact already exists");
+            throw new BusinessException("error.contact.exists");
         }
 
         // Check if contact user exists
         User contactUser = userRepository.findById(contactUserId)
-                .orElseThrow(() -> new RuntimeException("Contact user not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
+        // Get target user's privacy settings
+        UserPrivacySettings privacy = privacySettingsRepository.findByUserId(contactUserId)
+                .orElse(null);
+
+        // Default to VERIFICATION mode (require approval)
+        FriendRequestMode mode = (privacy != null && privacy.getFriendRequestMode() != null)
+                ? privacy.getFriendRequestMode()
+                : FriendRequestMode.VERIFY;
+
+        if (mode == FriendRequestMode.DIRECT) {
+            // 直接添加模式
+            return directAddContact(userId, contactUserId, contactUser);
+        } else {
+            // 验证模式 - 发送好友申请
+            return sendContactRequest(userId, contactUserId, message);
+        }
+    }
+
+    /**
+     * Add a contact (without message - for backwards compatibility)
+     */
+    @Transactional
+    public Object addContact(Long userId, Long contactUserId) {
+        return addContact(userId, contactUserId, null);
+    }
+
+    /**
+     * 直接添加联系人
+     */
+    private ContactDTO directAddContact(Long userId, Long contactUserId, User contactUser) {
         Contact contact = new Contact();
         contact.setUserId(userId);
         contact.setContactUserId(contactUserId);
@@ -58,9 +96,199 @@ public class ContactService {
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_ADDED,
                 contactDTO);
-        messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
 
         return contactDTO;
+    }
+
+    /**
+     * 发送好友申请
+     */
+    @Transactional
+    public ContactRequestDTO sendContactRequest(Long fromUserId, Long toUserId, String message) {
+        // Check if request already exists
+        if (contactRequestRepository.existsByFromUserIdAndToUserIdAndStatus(
+                fromUserId, toUserId, RequestStatus.PENDING)) {
+            throw new BusinessException("error.friend.request.already.sent");
+        }
+
+        // Check if already contacts
+        if (contactRepository.existsByUserIdAndContactUserId(fromUserId, toUserId)) {
+            throw new BusinessException("error.friend.request.already.contact");
+        }
+
+        User fromUser = userRepository.findById(fromUserId)
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
+        User toUser = userRepository.findById(toUserId)
+                .orElseThrow(() -> new BusinessException("error.friend.request.target.not.found"));
+
+        // Create the request
+        ContactRequest request = new ContactRequest();
+        request.setFromUserId(fromUserId);
+        request.setToUserId(toUserId);
+        request.setMessage(message);
+        request.setStatus(RequestStatus.PENDING);
+
+        ContactRequest saved = contactRequestRepository.save(request);
+
+        // Build DTO
+        ContactRequestDTO dto = mapToContactRequestDTO(saved, fromUser, toUser);
+
+        // Notify target user via WebSocket
+        WebSocketMessage wsMessage = new WebSocketMessage(
+                WebSocketMessage.MessageType.CONTACT_REQUEST,
+                dto);
+        messagingTemplate.convertAndSendToUser(String.valueOf(toUserId), "/queue/contacts", wsMessage);
+
+        return dto;
+    }
+
+    /**
+     * 接受好友申请
+     */
+    @Transactional
+    public ContactDTO acceptContactRequest(Long requestId, Long userId) {
+        ContactRequest request = contactRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException("error.friend.request.not.found"));
+
+        if (!request.getToUserId().equals(userId)) {
+            throw new BusinessException("error.friend.request.not.authorized.accept");
+        }
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new BusinessException("error.friend.request.already.processed");
+        }
+
+        // Update request status
+        request.setStatus(RequestStatus.ACCEPTED);
+        contactRequestRepository.save(request);
+
+        // Add contact for both users (双向添加)
+        User fromUser = userRepository.findById(request.getFromUserId())
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
+        User toUser = userRepository.findById(request.getToUserId())
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
+
+        // Add to userId's contact list
+        Contact contact1 = new Contact();
+        contact1.setUserId(request.getToUserId());
+        contact1.setContactUserId(request.getFromUserId());
+        contactRepository.save(contact1);
+
+        // Add to fromUserId's contact list
+        Contact contact2 = new Contact();
+        contact2.setUserId(request.getFromUserId());
+        contact2.setContactUserId(request.getToUserId());
+        contactRepository.save(contact2);
+
+        // Build DTOs for WebSocket notifications
+        ContactDTO contactDTOForTo = mapToContactDTO(contact1, fromUser);
+        ContactDTO contactDTOForFrom = mapToContactDTO(contact2, toUser);
+
+        // Notify both users
+        WebSocketMessage wsMessageTo = new WebSocketMessage(
+                WebSocketMessage.MessageType.CONTACT_ADDED,
+                contactDTOForTo);
+        messagingTemplate.convertAndSendToUser(String.valueOf(request.getToUserId()), "/queue/contacts", wsMessageTo);
+
+        WebSocketMessage wsMessageFrom = new WebSocketMessage(
+                WebSocketMessage.MessageType.CONTACT_REQUEST_ACCEPTED,
+                contactDTOForFrom);
+        messagingTemplate.convertAndSendToUser(String.valueOf(request.getFromUserId()), "/queue/contacts", wsMessageFrom);
+
+        return contactDTOForTo;
+    }
+
+    /**
+     * 拒绝好友申请
+     */
+    @Transactional
+    public void rejectContactRequest(Long requestId, Long userId) {
+        ContactRequest request = contactRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException("error.friend.request.not.found"));
+
+        if (!request.getToUserId().equals(userId)) {
+            throw new BusinessException("error.friend.request.not.authorized.reject");
+        }
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new BusinessException("error.friend.request.already.processed");
+        }
+
+        // Update request status
+        request.setStatus(RequestStatus.REJECTED);
+        contactRequestRepository.save(request);
+
+        // Notify the requester
+        WebSocketMessage wsMessage = new WebSocketMessage(
+                WebSocketMessage.MessageType.CONTACT_REQUEST_REJECTED,
+                Map.of("requestId", requestId, "toUserId", userId));
+        messagingTemplate.convertAndSendToUser(String.valueOf(request.getFromUserId()), "/queue/contacts", wsMessage);
+    }
+
+    /**
+     * 获取用户收到的待处理好友申请
+     */
+    public List<ContactRequestDTO> getPendingRequests(Long userId) {
+        List<ContactRequest> requests = contactRequestRepository
+                .findByToUserIdAndStatusOrderByCreatedAtDesc(userId, RequestStatus.PENDING);
+
+        return requests.stream()
+                .map(request -> {
+                    User fromUser = userRepository.findById(request.getFromUserId()).orElse(null);
+                    User toUser = userRepository.findById(request.getToUserId()).orElse(null);
+                    return mapToContactRequestDTO(request, fromUser, toUser);
+                })
+                .filter(dto -> dto != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取用户发出的待处理好友申请
+     */
+    public List<ContactRequestDTO> getSentRequests(Long userId) {
+        List<ContactRequest> requests = contactRequestRepository
+                .findByFromUserIdAndStatusOrderByCreatedAtDesc(userId, RequestStatus.PENDING);
+
+        return requests.stream()
+                .map(request -> {
+                    User fromUser = userRepository.findById(request.getFromUserId()).orElse(null);
+                    User toUser = userRepository.findById(request.getToUserId()).orElse(null);
+                    return mapToContactRequestDTO(request, fromUser, toUser);
+                })
+                .filter(dto -> dto != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取待处理申请数量
+     */
+    public long getPendingRequestCount(Long userId) {
+        return contactRequestRepository.countByToUserIdAndStatus(userId, RequestStatus.PENDING);
+    }
+
+    /**
+     * Map ContactRequest to DTO
+     */
+    private ContactRequestDTO mapToContactRequestDTO(ContactRequest request, User fromUser, User toUser) {
+        if (fromUser == null || toUser == null) return null;
+
+        ContactRequestDTO dto = new ContactRequestDTO();
+        dto.setId(request.getId());
+        dto.setFromUserId(request.getFromUserId());
+        dto.setFromUsername(fromUser.getUsername());
+        dto.setFromNickname(fromUser.getNickname());
+        dto.setFromAvatarUrl(fromUser.getAvatarUrl());
+        dto.setFromIsOnline(fromUser.getIsOnline());
+        dto.setToUserId(request.getToUserId());
+        dto.setToUsername(toUser.getUsername());
+        dto.setToNickname(toUser.getNickname());
+        dto.setToAvatarUrl(toUser.getAvatarUrl());
+        dto.setMessage(request.getMessage());
+        dto.setStatus(request.getStatus().name());
+        dto.setCreatedAt(request.getCreatedAt());
+        dto.setUpdatedAt(request.getUpdatedAt());
+        return dto;
     }
 
     /**
@@ -69,7 +297,7 @@ public class ContactService {
     @Transactional
     public void removeContact(Long userId, Long contactUserId) {
         Contact contact = contactRepository.findByUserIdAndContactUserId(userId, contactUserId)
-                .orElseThrow(() -> new RuntimeException("Contact not found"));
+                .orElseThrow(() -> new BusinessException("error.contact.not.found"));
 
         contactRepository.delete(contact);
 
@@ -77,7 +305,7 @@ public class ContactService {
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_REMOVED,
                 Map.of("contactId", contactUserId));
-        messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
     }
 
     /**
@@ -174,7 +402,7 @@ public class ContactService {
 
         // Notify each user who has this user as a contact
         for (Long targetUserId : usersWhoHaveThisUserAsContact) {
-            messagingTemplate.convertAndSend("/user/" + targetUserId + "/queue/contacts", wsMessage);
+            messagingTemplate.convertAndSendToUser(String.valueOf(targetUserId), "/queue/contacts", wsMessage);
         }
     }
 

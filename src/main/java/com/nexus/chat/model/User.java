@@ -41,7 +41,7 @@ public class User {
     @Column(length = 150)
     private String bio;
 
-    @Column(name = "profile_background", columnDefinition = "TEXT")
+    @Column(name = "profile_background", columnDefinition = "MEDIUMTEXT")
     private String profileBackground = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
 
     @Column(name = "is_online")

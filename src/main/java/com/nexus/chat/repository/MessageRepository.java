@@ -13,7 +13,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Page<Message> findByChatIdOrderByCreatedAtDesc(Long chatId, Pageable pageable);
 
+    Page<Message> findByChatId(Long chatId, Pageable pageable);
+
     List<Message> findByChatIdOrderByCreatedAtDesc(Long chatId);
+
+    List<Message> findByChatIdOrderByCreatedAtAsc(Long chatId);
 
     Long countByChatId(Long chatId);
 

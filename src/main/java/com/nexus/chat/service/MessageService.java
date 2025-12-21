@@ -1,6 +1,7 @@
 package com.nexus.chat.service;
 
 import com.nexus.chat.dto.MessageDTO;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.ChatMember;
 import com.nexus.chat.model.Message;
 import com.nexus.chat.model.MessageReadStatus;
@@ -35,7 +36,7 @@ public class MessageService {
             String fileUrl) {
         // Verify sender is a member
         if (!chatMemberRepository.existsByChatIdAndUserId(chatId, senderId)) {
-            throw new RuntimeException("User is not a member of this chat");
+            throw new BusinessException("error.chat.not.member");
         }
 
         // Create message
@@ -71,11 +72,11 @@ public class MessageService {
     public List<MessageDTO> getChatMessages(Long chatId, Long userId, int page, int size) {
         // Verify user is a member
         if (!chatMemberRepository.existsByChatIdAndUserId(chatId, userId)) {
-            throw new RuntimeException("User is not a member of this chat");
+            throw new BusinessException("error.chat.not.member");
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Message> messages = messageRepository.findByChatIdOrderByCreatedAtDesc(chatId, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
+        Page<Message> messages = messageRepository.findByChatId(chatId, pageable);
 
         return messages.stream()
                 .map(this::mapToDTO)

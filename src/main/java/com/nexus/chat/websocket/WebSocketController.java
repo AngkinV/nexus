@@ -1,7 +1,9 @@
 package com.nexus.chat.websocket;
 
 import com.nexus.chat.dto.*;
+import com.nexus.chat.model.ChatMember;
 import com.nexus.chat.model.Message;
+import com.nexus.chat.repository.ChatMemberRepository;
 import com.nexus.chat.service.ContactService;
 import com.nexus.chat.service.GroupService;
 import com.nexus.chat.service.MessageService;
@@ -27,6 +29,7 @@ public class WebSocketController {
     private final UserService userService;
     private final ContactService contactService;
     private final GroupService groupService;
+    private final ChatMemberRepository chatMemberRepository;
 
     /**
      * Handle sending chat messages (direct and group)
@@ -50,8 +53,19 @@ public class WebSocketController {
                     WebSocketMessage.MessageType.CHAT_MESSAGE,
                     message);
 
-            // Broadcast to chat room
+            // Broadcast to chat room topic
             messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
+
+            // Also send directly to each chat member's personal topic
+            // This ensures delivery even if they haven't subscribed to the chat room
+            List<ChatMember> members = chatMemberRepository.findByChatId(chatId);
+            for (ChatMember member : members) {
+                // Send to user-specific topic (more reliable than user destinations)
+                messagingTemplate.convertAndSend(
+                        "/topic/user." + member.getUserId() + ".messages",
+                        wsMessage
+                );
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -152,13 +166,13 @@ public class WebSocketController {
                     group);
 
             // Notify creator
-            messagingTemplate.convertAndSend("/user/" + userId + "/queue/groups", wsMessage);
+            messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/groups", wsMessage);
 
             // Notify all members
             if (memberIds != null) {
                 for (Long memberId : memberIds) {
                     if (!memberId.equals(userId)) {
-                        messagingTemplate.convertAndSend("/user/" + memberId + "/queue/groups", wsMessage);
+                        messagingTemplate.convertAndSendToUser(String.valueOf(memberId), "/queue/groups", wsMessage);
                     }
                 }
             }
@@ -250,15 +264,18 @@ public class WebSocketController {
         try {
             Long userId = Long.valueOf(payload.get("userId").toString());
             Long contactUserId = Long.valueOf(payload.get("contactUserId").toString());
+            String message = payload.get("message") != null ? payload.get("message").toString() : null;
 
-            ContactDTO contact = contactService.addContact(userId, contactUserId);
+            Object result = contactService.addContact(userId, contactUserId, message);
 
-            WebSocketMessage wsMessage = new WebSocketMessage(
-                    WebSocketMessage.MessageType.CONTACT_ADDED,
-                    contact);
-
-            // Notify user
-            messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+            // 根据返回类型决定消息类型
+            if (result instanceof ContactDTO) {
+                WebSocketMessage wsMessage = new WebSocketMessage(
+                        WebSocketMessage.MessageType.CONTACT_ADDED,
+                        result);
+                messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
+            }
+            // ContactRequestDTO 的情况已在 ContactService 中处理了 WebSocket 通知
         } catch (Exception e) {
             e.printStackTrace();
             sendError(payload.get("userId"), "Failed to add contact: " + e.getMessage());
@@ -281,7 +298,7 @@ public class WebSocketController {
                     Map.of("contactId", contactUserId));
 
             // Notify user
-            messagingTemplate.convertAndSend("/user/" + userId + "/queue/contacts", wsMessage);
+            messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -295,7 +312,7 @@ public class WebSocketController {
             WebSocketMessage wsMessage = new WebSocketMessage(
                     WebSocketMessage.MessageType.ERROR,
                     Map.of("message", errorMessage));
-            messagingTemplate.convertAndSend("/user/" + userId + "/queue/errors", wsMessage);
+            messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/errors", wsMessage);
         }
     }
 

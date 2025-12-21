@@ -13,4 +13,9 @@ import lombok.NoArgsConstructor;
 public class AddContactRequest {
     private Long userId;
     private Long contactUserId;
+
+    /**
+     * 好友申请附言（可选）
+     */
+    private String message;
 }

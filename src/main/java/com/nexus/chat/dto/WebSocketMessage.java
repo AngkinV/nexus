@@ -17,6 +17,9 @@ public class WebSocketMessage {
         MESSAGE_READ,
         TYPING,
 
+        // Chat events
+        CHAT_CREATED,
+
         // User status
         USER_ONLINE,
         USER_OFFLINE,
@@ -34,6 +37,11 @@ public class WebSocketMessage {
         CONTACT_ADDED,
         CONTACT_REMOVED,
         CONTACT_STATUS_CHANGED,
+
+        // Contact request events (好友申请事件)
+        CONTACT_REQUEST,           // 收到好友申请
+        CONTACT_REQUEST_ACCEPTED,  // 好友申请被接受
+        CONTACT_REQUEST_REJECTED,  // 好友申请被拒绝
 
         // Error
         ERROR

@@ -125,8 +125,9 @@ CREATE TABLE IF NOT EXISTS file_uploads (
   -- ============================================
   -- 1. 用户表新增字段 (个人资料背景)
   -- ============================================
-  ALTER TABLE users
-  ADD COLUMN profile_background TEXT AFTER bio;
+
+
+  ALTER TABLE users MODIFY COLUMN profile_background MEDIUMTEXT;
 
   -- ============================================
   -- 2. 用户社交链接表 (新建)
@@ -214,3 +215,36 @@ CREATE TABLE IF NOT EXISTS file_uploads (
       INDEX idx_activity_type (activity_type),
       INDEX idx_created_at (created_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 7. 好友申请表 (新建 - 好友验证功能)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS contact_requests (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      from_user_id BIGINT NOT NULL,
+      to_user_id BIGINT NOT NULL,
+      message VARCHAR(200) DEFAULT NULL,
+      status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_request (from_user_id, to_user_id),
+      INDEX idx_from_user_id (from_user_id),
+      INDEX idx_to_user_id (to_user_id),
+      INDEX idx_status (status)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 8. 更新隐私设置表 - 添加好友验证方式字段
+  -- 注意: MySQL不支持 ADD COLUMN IF NOT EXISTS
+  -- 请先检查列是否存在，不存在时手动执行下面的ALTER语句
+  -- ============================================
+  -- 检查列是否存在:
+  -- SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+  -- WHERE TABLE_SCHEMA = 'nexus_chat' AND TABLE_NAME = 'user_privacy_settings'
+  -- AND COLUMN_NAME = 'friend_request_mode';
+  --
+  -- 如果不存在，执行:
+  -- ALTER TABLE user_privacy_settings
+  -- ADD COLUMN friend_request_mode ENUM('DIRECT', 'VERIFY') DEFAULT 'DIRECT';

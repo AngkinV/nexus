@@ -1,6 +1,7 @@
 package com.nexus.chat.service;
 
 import com.nexus.chat.dto.*;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.Chat;
 import com.nexus.chat.model.ChatMember;
 import com.nexus.chat.model.Message;
@@ -82,10 +83,10 @@ public class GroupService {
      */
     public GroupDTO getGroupById(Long groupId) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         if (chat.getType() != Chat.ChatType.group) {
-            throw new RuntimeException("Not a group chat");
+            throw new BusinessException("error.group.not.group.chat");
         }
 
         return mapToGroupDTO(chat);
@@ -97,14 +98,14 @@ public class GroupService {
     @Transactional
     public GroupDTO updateGroup(Long groupId, Long userId, UpdateGroupRequest request) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         // Check if user is admin
         ChatMember member = chatMemberRepository.findByChatIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new RuntimeException("User is not a member of this group"));
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
 
         if (!member.getIsAdmin()) {
-            throw new RuntimeException("Only admins can update group information");
+            throw new BusinessException("error.group.admin.required");
         }
 
         // Update fields
@@ -136,11 +137,11 @@ public class GroupService {
     @Transactional
     public void deleteGroup(Long groupId, Long userId) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         // Only owner can delete group
         if (!chat.getCreatedBy().equals(userId)) {
-            throw new RuntimeException("Only the group owner can delete the group");
+            throw new BusinessException("error.group.owner.required");
         }
 
         // Broadcast deletion before deleting
@@ -159,21 +160,21 @@ public class GroupService {
     @Transactional
     public void addMembers(Long groupId, Long userId, List<Long> userIds) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         // Check if user is admin
         ChatMember adminMember = chatMemberRepository.findByChatIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new RuntimeException("User is not a member of this group"));
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
 
         if (!adminMember.getIsAdmin()) {
-            throw new RuntimeException("Only admins can add members");
+            throw new BusinessException("error.group.admin.add.member");
         }
 
         for (Long newUserId : userIds) {
             if (!chatMemberRepository.existsByChatIdAndUserId(groupId, newUserId)) {
                 // Verify user exists
                 User user = userRepository.findById(newUserId)
-                        .orElseThrow(() -> new RuntimeException("User not found: " + newUserId));
+                        .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
                 ChatMember member = new ChatMember();
                 member.setChatId(groupId);
@@ -200,19 +201,19 @@ public class GroupService {
     @Transactional
     public void removeMember(Long groupId, Long adminUserId, Long memberUserId) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         // Check if requesting user is admin
         ChatMember adminMember = chatMemberRepository.findByChatIdAndUserId(groupId, adminUserId)
-                .orElseThrow(() -> new RuntimeException("User is not a member of this group"));
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
 
         if (!adminMember.getIsAdmin()) {
-            throw new RuntimeException("Only admins can remove members");
+            throw new BusinessException("error.group.admin.remove.member");
         }
 
         // Can't remove owner
         if (chat.getCreatedBy().equals(memberUserId)) {
-            throw new RuntimeException("Cannot remove the group owner");
+            throw new BusinessException("error.group.cannot.remove.owner");
         }
 
         chatMemberRepository.deleteByChatIdAndUserId(groupId, memberUserId);
@@ -232,11 +233,11 @@ public class GroupService {
     @Transactional
     public void leaveGroup(Long groupId, Long userId) {
         Chat chat = chatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
         // Owner cannot leave (must delete group)
         if (chat.getCreatedBy().equals(userId)) {
-            throw new RuntimeException("Group owner cannot leave. Transfer ownership or delete the group.");
+            throw new BusinessException("error.group.owner.cannot.leave");
         }
 
         chatMemberRepository.deleteByChatIdAndUserId(groupId, userId);

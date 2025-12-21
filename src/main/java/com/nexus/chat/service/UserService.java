@@ -1,6 +1,7 @@
 package com.nexus.chat.service;
 
 import com.nexus.chat.dto.*;
+import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.User;
 import com.nexus.chat.model.UserPrivacySettings;
 import com.nexus.chat.model.UserSocialLink;
@@ -42,13 +43,13 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
         return mapToDTO(user);
     }
 
     public UserDTO getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
         return mapToDTO(user);
     }
 
@@ -61,7 +62,7 @@ public class UserService {
     @Transactional
     public UserDTO updateProfile(Long userId, String nickname, String avatarUrl) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         if (nickname != null) {
             user.setNickname(nickname);
@@ -77,7 +78,7 @@ public class UserService {
     @Transactional
     public void updateOnlineStatus(Long userId, boolean isOnline) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
         user.setIsOnline(isOnline);
         userRepository.save(user);
     }
@@ -87,7 +88,7 @@ public class UserService {
      */
     public UserProfileDTO getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         UserPrivacySettings privacy = privacySettingsRepository.findByUserId(userId)
                 .orElse(createDefaultPrivacySettings(userId));
@@ -133,7 +134,7 @@ public class UserService {
      */
     public UserProfileDTO getUserProfileForViewer(Long userId, Long viewerId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         UserPrivacySettings privacy = privacySettingsRepository.findByUserId(userId)
                 .orElse(createDefaultPrivacySettings(userId));
@@ -169,17 +170,17 @@ public class UserService {
     @Transactional
     public UserProfileDTO updateUserProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         if (request.getNickname() != null && !request.getNickname().isEmpty()) {
             if (request.getNickname().length() < 2 || request.getNickname().length() > 30) {
-                throw new RuntimeException("Nickname must be between 2 and 30 characters");
+                throw new BusinessException("error.user.nickname.length");
             }
             user.setNickname(request.getNickname());
         }
         if (request.getBio() != null) {
             if (request.getBio().length() > 150) {
-                throw new RuntimeException("Bio must be at most 150 characters");
+                throw new BusinessException("error.user.bio.length");
             }
             user.setBio(request.getBio());
         }
@@ -188,7 +189,7 @@ public class UserService {
             userRepository.findByEmail(request.getEmail())
                     .ifPresent(existingUser -> {
                         if (!existingUser.getId().equals(userId)) {
-                            throw new RuntimeException("Email is already in use");
+                            throw new BusinessException("error.user.email.in.use");
                         }
                     });
             user.setEmail(request.getEmail());
@@ -207,16 +208,16 @@ public class UserService {
     @Transactional
     public String uploadAvatar(Long userId, MultipartFile file) throws IOException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         // Validate file
         if (file.isEmpty()) {
-            throw new RuntimeException("File is empty");
+            throw new BusinessException("error.user.file.empty");
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException("Only image files are allowed");
+            throw new BusinessException("error.user.file.image.only");
         }
 
         // Generate unique filename
@@ -250,7 +251,7 @@ public class UserService {
     @Transactional
     public String uploadAvatarBase64(Long userId, String base64Image) throws IOException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         // For simplicity, store Base64 directly (suitable for smaller images)
         // In production, consider decoding and saving as file
@@ -266,7 +267,7 @@ public class UserService {
     @Transactional
     public void deleteAvatar(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
 
         // Delete old file if it's a path
         String oldAvatar = user.getAvatarUrl();
@@ -303,6 +304,16 @@ public class UserService {
         if (request.getShowPhone() != null) {
             settings.setShowPhone(request.getShowPhone());
         }
+        if (request.getFriendRequestMode() != null) {
+            try {
+                settings.setFriendRequestMode(
+                    UserPrivacySettings.FriendRequestMode.valueOf(request.getFriendRequestMode())
+                );
+            } catch (IllegalArgumentException e) {
+                // 默认使用 DIRECT
+                settings.setFriendRequestMode(UserPrivacySettings.FriendRequestMode.DIRECT);
+            }
+        }
 
         UserPrivacySettings saved = privacySettingsRepository.save(settings);
 
@@ -311,6 +322,7 @@ public class UserService {
         response.setShowLastSeen(saved.getShowLastSeen());
         response.setShowEmail(saved.getShowEmail());
         response.setShowPhone(saved.getShowPhone());
+        response.setFriendRequestMode(saved.getFriendRequestMode().name());
 
         return response;
     }
@@ -403,7 +415,7 @@ public class UserService {
     @Transactional
     public String updateProfileBackground(Long userId, String background) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("error.user.not.found"));
         user.setProfileBackground(background);
         userRepository.save(user);
         return background;
