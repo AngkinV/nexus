@@ -3,6 +3,7 @@ package com.nexus.chat.controller;
 import com.nexus.chat.dto.*;
 import com.nexus.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  * REST Controller for User management
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

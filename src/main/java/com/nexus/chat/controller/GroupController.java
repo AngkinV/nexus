@@ -3,6 +3,7 @@ package com.nexus.chat.controller;
 import com.nexus.chat.dto.*;
 import com.nexus.chat.service.GroupService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 /**
  * REST Controller for Group (Chat Group) management
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/groups")
 @RequiredArgsConstructor

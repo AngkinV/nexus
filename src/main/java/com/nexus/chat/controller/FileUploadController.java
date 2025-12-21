@@ -1,5 +1,6 @@
 package com.nexus.chat.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/files")
 public class FileUploadController {
@@ -21,6 +23,7 @@ public class FileUploadController {
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+        log.debug("文件上传请求: filename={}, size={}", file.getOriginalFilename(), file.getSize());
         try {
             // Create upload directory if it doesn't exist
             File uploadDir = new File(UPLOAD_DIR);
@@ -45,8 +48,10 @@ public class FileUploadController {
             response.put("filename", originalFilename);
             response.put("size", String.valueOf(file.getSize()));
 
+            log.info("文件上传成功: filename={}, savedAs={}", originalFilename, filename);
             return ResponseEntity.ok(response);
         } catch (IOException e) {
+            log.error("文件上传失败: filename={}", file.getOriginalFilename(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -57,6 +62,7 @@ public class FileUploadController {
             @RequestParam("chunkIndex") int chunkIndex,
             @RequestParam("totalChunks") int totalChunks,
             @RequestParam("fileId") String fileId) {
+        log.debug("分片上传请求: fileId={}, chunkIndex={}/{}", fileId, chunkIndex, totalChunks);
         try {
             // Create temp directory for crunks
             File chunksDir = new File(UPLOAD_DIR + "chunks/" + fileId);
@@ -77,12 +83,14 @@ public class FileUploadController {
                 String mergedFilename = mergeChunks(fileId, totalChunks);
                 response.put("complete", true);
                 response.put("fileUrl", "/uploads/" + mergedFilename);
+                log.info("分片上传完成并合并: fileId={}", fileId);
             } else {
                 response.put("complete", false);
             }
 
             return ResponseEntity.ok(response);
         } catch (IOException e) {
+            log.error("分片上传失败: fileId={}, chunkIndex={}", fileId, chunkIndex, e);
             return ResponseEntity.internalServerError().build();
         }
     }

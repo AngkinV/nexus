@@ -9,6 +9,7 @@ import com.nexus.chat.service.GroupService;
 import com.nexus.chat.service.MessageService;
 import com.nexus.chat.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * WebSocket Controller for real-time messaging and events
  */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class WebSocketController {
@@ -67,7 +69,7 @@ public class WebSocketController {
                 );
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("发送消息失败: chatId={}, senderId={}", payload.get("chatId"), payload.get("senderId"), e);
         }
     }
 
@@ -92,7 +94,7 @@ public class WebSocketController {
             // Notify user's contacts about status change
             contactService.notifyContactsOfStatusChange(userId, isOnline);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("更新用户状态失败: userId={}, isOnline={}", payload.get("userId"), payload.get("isOnline"), e);
         }
     }
 
@@ -113,7 +115,7 @@ public class WebSocketController {
             // Broadcast to chat room
             messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("处理输入状态失败: chatId={}, userId={}", payload.get("chatId"), payload.get("userId"), e);
         }
     }
 
@@ -136,7 +138,7 @@ public class WebSocketController {
             // Broadcast to chat room
             messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("处理消息已读状态失败: chatId={}, userId={}", payload.get("chatId"), payload.get("userId"), e);
         }
     }
 
@@ -177,7 +179,7 @@ public class WebSocketController {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("创建群组失败: userId={}, name={}", payload.get("userId"), payload.get("name"), e);
             sendError(payload.get("userId"), "Failed to create group: " + e.getMessage());
         }
     }
@@ -202,7 +204,7 @@ public class WebSocketController {
             // Broadcast to group
             messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("加入群组失败: groupId={}, userId={}", payload.get("groupId"), payload.get("userId"), e);
         }
     }
 
@@ -224,7 +226,7 @@ public class WebSocketController {
             // Broadcast to group
             messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("离开群组失败: groupId={}, userId={}", payload.get("groupId"), payload.get("userId"), e);
         }
     }
 
@@ -252,7 +254,7 @@ public class WebSocketController {
             // Broadcast to group
             messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("发送群组消息失败: groupId={}, senderId={}", payload.get("groupId"), payload.get("senderId"), e);
         }
     }
 
@@ -277,7 +279,7 @@ public class WebSocketController {
             }
             // ContactRequestDTO 的情况已在 ContactService 中处理了 WebSocket 通知
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("添加联系人失败: userId={}, contactUserId={}", payload.get("userId"), payload.get("contactUserId"), e);
             sendError(payload.get("userId"), "Failed to add contact: " + e.getMessage());
         }
     }
@@ -300,7 +302,7 @@ public class WebSocketController {
             // Notify user
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("移除联系人失败: userId={}, contactUserId={}", payload.get("userId"), payload.get("contactUserId"), e);
         }
     }
 

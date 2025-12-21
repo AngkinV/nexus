@@ -1,5 +1,6 @@
 package com.nexus.chat.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -14,6 +15,7 @@ import java.security.Principal;
  * WebSocket Channel Interceptor for user authentication
  * Extracts userId from STOMP CONNECT headers and sets it as the user Principal
  */
+@Slf4j
 @Component
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
@@ -28,6 +30,9 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             if (userId != null && !userId.isEmpty()) {
                 // Set user principal
                 accessor.setUser(new StompPrincipal(userId));
+                log.info("WebSocket 用户连接: userId={}", userId);
+            } else {
+                log.warn("WebSocket 连接缺少 userId 头信息");
             }
         }
 

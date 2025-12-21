@@ -6,6 +6,7 @@ import com.nexus.chat.dto.ContactRequestDTO;
 import com.nexus.chat.dto.UserDTO;
 import com.nexus.chat.service.ContactService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 /**
  * REST Controller for Contact management
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/contacts")
 @RequiredArgsConstructor
