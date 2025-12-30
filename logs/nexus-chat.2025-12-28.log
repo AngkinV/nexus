@@ -1,0 +1,11 @@
+2025-12-28 19:18:11.648  INFO 26748 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 26748 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2025-12-28 19:18:11.648 DEBUG 26748 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-12-28 19:18:11.648  INFO 26748 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2025-12-28 19:18:13.162 DEBUG 26748 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2025-12-28 19:18:13.256 DEBUG 26748 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2025-12-28 19:18:13.259  INFO 26748 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2025-12-28 19:18:13.458  INFO 26748 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2025-12-28 19:18:13.458  INFO 26748 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2025-12-28 19:18:13.469  INFO 26748 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2025-12-28 19:18:13.515  INFO 26748 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2025-12-28 19:18:13.633  INFO 26748 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.185 seconds (process running for 2.496)

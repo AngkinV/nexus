@@ -1,0 +1,4 @@
+2025-12-21 20:27:05.995  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 25677 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2025-12-21 20:27:05.995 DEBUG 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-12-21 20:27:05.996  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2025-12-21 20:27:07.726  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 1.895 seconds (process running for 2.073)

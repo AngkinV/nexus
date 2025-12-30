@@ -1,4 +1,16 @@
-2025-12-21 20:27:05.995  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 25677 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
-2025-12-21 20:27:05.995 DEBUG 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
-2025-12-21 20:27:05.996  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
-2025-12-21 20:27:07.726  INFO 25677 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 1.895 seconds (process running for 2.073)
+2025-12-30 23:03:02.087  INFO 49546 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 49546 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2025-12-30 23:03:02.087 DEBUG 49546 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-12-30 23:03:02.087  INFO 49546 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2025-12-30 23:03:03.610 DEBUG 49546 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2025-12-30 23:03:03.697 DEBUG 49546 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2025-12-30 23:03:03.700  INFO 49546 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2025-12-30 23:03:03.891  INFO 49546 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2025-12-30 23:03:03.891  INFO 49546 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2025-12-30 23:03:03.905  INFO 49546 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2025-12-30 23:03:03.963  INFO 49546 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2025-12-30 23:03:04.120  INFO 49546 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.21 seconds (process running for 2.457)
+2025-12-30 23:03:11.742 DEBUG 49546 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=5
+2025-12-30 23:03:11.817  INFO 49546 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=5
+2025-12-30 23:03:55.177 DEBUG 49546 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=5
+2025-12-30 23:04:03.816 DEBUG 49546 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=5
+2025-12-30 23:09:56.084 DEBUG 49546 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=5
