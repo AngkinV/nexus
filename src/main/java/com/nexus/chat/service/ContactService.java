@@ -5,12 +5,15 @@ import com.nexus.chat.dto.ContactRequestDTO;
 import com.nexus.chat.dto.UserDTO;
 import com.nexus.chat.dto.WebSocketMessage;
 import com.nexus.chat.exception.BusinessException;
+import com.nexus.chat.model.Chat;
 import com.nexus.chat.model.Contact;
 import com.nexus.chat.model.ContactRequest;
 import com.nexus.chat.model.ContactRequest.RequestStatus;
 import com.nexus.chat.model.User;
 import com.nexus.chat.model.UserPrivacySettings;
 import com.nexus.chat.model.UserPrivacySettings.FriendRequestMode;
+import com.nexus.chat.repository.ChatMemberRepository;
+import com.nexus.chat.repository.ChatRepository;
 import com.nexus.chat.repository.ContactRepository;
 import com.nexus.chat.repository.ContactRequestRepository;
 import com.nexus.chat.repository.UserPrivacySettingsRepository;
@@ -34,6 +37,8 @@ public class ContactService {
     private final ContactRequestRepository contactRequestRepository;
     private final UserRepository userRepository;
     private final UserPrivacySettingsRepository privacySettingsRepository;
+    private final ChatRepository chatRepository;
+    private final ChatMemberRepository chatMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
@@ -98,7 +103,7 @@ public class ContactService {
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_ADDED,
                 contactDTO);
-        messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSend("/topic/user." + userId + ".contacts", wsMessage);
 
         return contactDTO;
     }
@@ -140,7 +145,7 @@ public class ContactService {
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_REQUEST,
                 dto);
-        messagingTemplate.convertAndSendToUser(String.valueOf(toUserId), "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSend("/topic/user." + toUserId + ".contacts", wsMessage);
 
         return dto;
     }
@@ -191,12 +196,12 @@ public class ContactService {
         WebSocketMessage wsMessageTo = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_ADDED,
                 contactDTOForTo);
-        messagingTemplate.convertAndSendToUser(String.valueOf(request.getToUserId()), "/queue/contacts", wsMessageTo);
+        messagingTemplate.convertAndSend("/topic/user." + request.getToUserId() + ".contacts", wsMessageTo);
 
         WebSocketMessage wsMessageFrom = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_REQUEST_ACCEPTED,
                 contactDTOForFrom);
-        messagingTemplate.convertAndSendToUser(String.valueOf(request.getFromUserId()), "/queue/contacts", wsMessageFrom);
+        messagingTemplate.convertAndSend("/topic/user." + request.getFromUserId() + ".contacts", wsMessageFrom);
 
         return contactDTOForTo;
     }
@@ -225,7 +230,7 @@ public class ContactService {
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_REQUEST_REJECTED,
                 Map.of("requestId", requestId, "toUserId", userId));
-        messagingTemplate.convertAndSendToUser(String.valueOf(request.getFromUserId()), "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSend("/topic/user." + request.getFromUserId() + ".contacts", wsMessage);
     }
 
     /**
@@ -294,20 +299,55 @@ public class ContactService {
     }
 
     /**
-     * Remove a contact
+     * Remove a contact (双向删除，同时禁用私聊)
      */
     @Transactional
     public void removeContact(Long userId, Long contactUserId) {
+        // 删除当前用户的联系人记录
         Contact contact = contactRepository.findByUserIdAndContactUserId(userId, contactUserId)
                 .orElseThrow(() -> new BusinessException("error.contact.not.found"));
-
         contactRepository.delete(contact);
 
-        // Notify user via WebSocket
-        WebSocketMessage wsMessage = new WebSocketMessage(
+        // 也删除对方的联系人记录
+        contactRepository.findByUserIdAndContactUserId(contactUserId, userId)
+                .ifPresent(contactRepository::delete);
+
+        // 删除双方之间的好友申请记录（允许将来重新添加好友）
+        contactRequestRepository.deleteByFromUserIdAndToUserId(userId, contactUserId);
+        contactRequestRepository.deleteByFromUserIdAndToUserId(contactUserId, userId);
+
+        // 查找双方的私聊并禁用
+        chatRepository.findDirectChatBetweenUsers(userId, contactUserId)
+                .ifPresent(chat -> {
+                    Long chatId = chat.getId();
+
+                    // 删除双方的 ChatMember 记录
+                    chatMemberRepository.deleteByChatIdAndUserId(chatId, userId);
+                    chatMemberRepository.deleteByChatIdAndUserId(chatId, contactUserId);
+
+                    // 通知双方聊天已禁用
+                    WebSocketMessage chatDisabledMsg1 = new WebSocketMessage(
+                            WebSocketMessage.MessageType.CHAT_DISABLED,
+                            Map.of("chatId", chatId, "reason", "contact_removed"));
+                    messagingTemplate.convertAndSend("/topic/user." + userId + ".contacts", chatDisabledMsg1);
+
+                    WebSocketMessage chatDisabledMsg2 = new WebSocketMessage(
+                            WebSocketMessage.MessageType.CHAT_DISABLED,
+                            Map.of("chatId", chatId, "reason", "contact_removed"));
+                    messagingTemplate.convertAndSend("/topic/user." + contactUserId + ".contacts", chatDisabledMsg2);
+                });
+
+        // 通知删除方
+        WebSocketMessage wsMessage1 = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_REMOVED,
                 Map.of("contactId", contactUserId));
-        messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
+        messagingTemplate.convertAndSend("/topic/user." + userId + ".contacts", wsMessage1);
+
+        // 通知被删除方
+        WebSocketMessage wsMessage2 = new WebSocketMessage(
+                WebSocketMessage.MessageType.CONTACT_REMOVED,
+                Map.of("contactId", userId));
+        messagingTemplate.convertAndSend("/topic/user." + contactUserId + ".contacts", wsMessage2);
     }
 
     /**
@@ -404,7 +444,7 @@ public class ContactService {
 
         // Notify each user who has this user as a contact
         for (Long targetUserId : usersWhoHaveThisUserAsContact) {
-            messagingTemplate.convertAndSendToUser(String.valueOf(targetUserId), "/queue/contacts", wsMessage);
+            messagingTemplate.convertAndSend("/topic/user." + targetUserId + ".contacts", wsMessage);
         }
     }
 

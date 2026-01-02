@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
@@ -35,5 +36,13 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
      * Find by type
      */
     List<Chat> findByType(Chat.ChatType type);
+
+    /**
+     * Find direct chat between two users
+     */
+    @Query("SELECT c FROM Chat c WHERE c.type = 'direct' AND c.id IN " +
+           "(SELECT cm1.chatId FROM ChatMember cm1 WHERE cm1.userId = :userId1) AND c.id IN " +
+           "(SELECT cm2.chatId FROM ChatMember cm2 WHERE cm2.userId = :userId2)")
+    Optional<Chat> findDirectChatBetweenUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 
 }

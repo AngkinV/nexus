@@ -19,6 +19,7 @@ public class WebSocketMessage {
 
         // Chat events
         CHAT_CREATED,
+        CHAT_DISABLED,
 
         // User status
         USER_ONLINE,

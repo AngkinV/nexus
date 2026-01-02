@@ -38,9 +38,11 @@ public class WebSocketController {
      */
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload Map<String, Object> payload) {
+        Long chatId = null;
+        Long senderId = null;
         try {
-            Long chatId = Long.valueOf(payload.get("chatId").toString());
-            Long senderId = Long.valueOf(payload.get("senderId").toString());
+            chatId = Long.valueOf(payload.get("chatId").toString());
+            senderId = Long.valueOf(payload.get("senderId").toString());
             String content = (String) payload.get("content");
             String messageTypeStr = (String) payload.get("messageType");
             String fileUrl = (String) payload.get("fileUrl");
@@ -69,7 +71,16 @@ public class WebSocketController {
                 );
             }
         } catch (Exception e) {
-            log.error("发送消息失败: chatId={}, senderId={}", payload.get("chatId"), payload.get("senderId"), e);
+            log.error("发送消息失败: chatId={}, senderId={}", chatId, senderId, e);
+            // 通知发送者消息发送失败
+            if (senderId != null) {
+                WebSocketMessage errorMsg = new WebSocketMessage(
+                        WebSocketMessage.MessageType.ERROR,
+                        Map.of("chatId", chatId != null ? chatId : 0,
+                               "error", "message_send_failed",
+                               "message", e.getMessage() != null ? e.getMessage() : "Unknown error"));
+                messagingTemplate.convertAndSend("/topic/user." + senderId + ".messages", errorMsg);
+            }
         }
     }
 
