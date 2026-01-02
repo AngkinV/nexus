@@ -1,0 +1,4 @@
+2025-12-31 00:04:15.377 DEBUG 49546 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=6
+2025-12-31 00:04:15.412  INFO 49546 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=6
+2025-12-31 00:14:19.543 DEBUG 49546 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=6
+2025-12-31 00:14:19.814  INFO 49546 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=6

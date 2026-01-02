@@ -4,6 +4,7 @@ com/nexus/chat/dto/LoginHistoryDTO.class
 com/nexus/chat/controller/ContactController.class
 com/nexus/chat/controller/UserController.class
 com/nexus/chat/dto/MessageDTO.class
+com/nexus/chat/dto/VerifyCodeRequest.class
 com/nexus/chat/model/UserActivity$ActivityType.class
 com/nexus/chat/model/ContactRequest.class
 com/nexus/chat/dto/UserStatsDTO.class
@@ -15,13 +16,16 @@ com/nexus/chat/service/GroupService.class
 com/nexus/chat/model/LoginHistory.class
 com/nexus/chat/service/AuthService.class
 com/nexus/chat/model/Chat$ChatType.class
+com/nexus/chat/service/VerificationCodeService.class
 com/nexus/chat/dto/PrivacySettingsDTO.class
 com/nexus/chat/controller/MessageController.class
 com/nexus/chat/dto/AddContactRequest.class
 com/nexus/chat/config/I18nConfig.class
 com/nexus/chat/dto/ChangePasswordRequest.class
+com/nexus/chat/model/EmailVerificationCode$CodeType.class
 com/nexus/chat/controller/GroupController.class
 com/nexus/chat/service/MessageService.class
+com/nexus/chat/repository/EmailVerificationCodeRepository.class
 com/nexus/chat/dto/SessionDTO.class
 com/nexus/chat/repository/LoginHistoryRepository.class
 com/nexus/chat/repository/ContactRepository.class
@@ -44,6 +48,7 @@ com/nexus/chat/model/FileUpload.class
 com/nexus/chat/model/Message$MessageType.class
 com/nexus/chat/exception/GlobalExceptionHandler.class
 com/nexus/chat/repository/ChatRepository.class
+com/nexus/chat/service/EmailService.class
 com/nexus/chat/dto/WebSocketMessage.class
 com/nexus/chat/controller/AuthController.class
 com/nexus/chat/service/ChatService.class
@@ -53,6 +58,7 @@ com/nexus/chat/model/UserSecuritySettings.class
 com/nexus/chat/model/Contact.class
 com/nexus/chat/dto/ContactDTO.class
 com/nexus/chat/model/ChatMember.class
+com/nexus/chat/dto/SendCodeRequest.class
 com/nexus/chat/dto/UpdateGroupRequest.class
 com/nexus/chat/dto/CreateGroupRequest.class
 com/nexus/chat/dto/ActivityDTO.class
@@ -68,6 +74,7 @@ com/nexus/chat/repository/MessageRepository.class
 com/nexus/chat/exception/BusinessException.class
 com/nexus/chat/dto/UserProfileDTO.class
 com/nexus/chat/NexusChatApplication.class
+com/nexus/chat/model/EmailVerificationCode.class
 com/nexus/chat/config/WebSocketAuthChannelInterceptor$StompPrincipal.class
 com/nexus/chat/model/UserPrivacySettings.class
 com/nexus/chat/model/Message.class

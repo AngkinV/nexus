@@ -248,3 +248,19 @@ CREATE TABLE IF NOT EXISTS file_uploads (
   -- 如果不存在，执行:
   -- ALTER TABLE user_privacy_settings
   -- ADD COLUMN friend_request_mode ENUM('DIRECT', 'VERIFY') DEFAULT 'DIRECT';
+
+  -- ============================================
+  -- 9. 邮箱验证码表 (新建 - 注册验证)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS email_verification_codes (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      email VARCHAR(100) NOT NULL,
+      code VARCHAR(6) NOT NULL,
+      type ENUM('REGISTER', 'RESET_PASSWORD', 'CHANGE_EMAIL') DEFAULT 'REGISTER',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      INDEX idx_email (email),
+      INDEX idx_email_code (email, code),
+      INDEX idx_expires_at (expires_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,6 +1,8 @@
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/controller/AuthController.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/ContactRepository.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/LoginHistory.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/VerifyCodeRequest.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/EmailVerificationCode.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/UserDTO.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/config/WebSocketAuthChannelInterceptor.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/PrivacySettingsDTO.java
@@ -28,6 +30,7 @@
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/ActivityDTO.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/ChatMember.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/LoginRequest.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/service/VerificationCodeService.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/controller/MessageController.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/UserActivity.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/UserSocialLink.java
@@ -41,8 +44,10 @@
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/UserPrivacySettingsRepository.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/service/ChatService.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/GroupDTO.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/service/EmailService.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/service/ContactService.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/LoginHistoryDTO.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/SendCodeRequest.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/config/I18nConfig.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/ContactRequest.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/UserProfileDTO.java
@@ -71,4 +76,5 @@
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/controller/ChatController.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/ChatDTO.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/controller/GroupController.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/EmailVerificationCodeRepository.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/websocket/WebSocketController.java

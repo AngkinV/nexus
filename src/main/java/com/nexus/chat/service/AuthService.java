@@ -4,6 +4,7 @@ import com.nexus.chat.dto.AuthResponse;
 import com.nexus.chat.dto.LoginRequest;
 import com.nexus.chat.dto.RegisterRequest;
 import com.nexus.chat.exception.BusinessException;
+import com.nexus.chat.model.EmailVerificationCode.CodeType;
 import com.nexus.chat.model.User;
 import com.nexus.chat.repository.UserRepository;
 import com.nexus.chat.security.JwtTokenProvider;
@@ -21,9 +22,25 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final VerificationCodeService verificationCodeService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        // Verify the verification code first
+        if (request.getVerificationCode() == null || request.getVerificationCode().isEmpty()) {
+            throw new BusinessException("请输入邮箱验证码");
+        }
+
+        boolean codeValid = verificationCodeService.verifyCode(
+                request.getEmail(),
+                request.getVerificationCode(),
+                CodeType.REGISTER
+        );
+
+        if (!codeValid) {
+            throw new BusinessException("验证码无效或已过期");
+        }
+
         // Check if username already exists
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BusinessException("error.auth.username.exists");

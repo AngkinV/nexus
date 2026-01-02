@@ -221,3 +221,67 @@
 2026-01-02 14:11:47.548  INFO 38001 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
 2026-01-02 14:12:42.148 DEBUG 38001 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
 2026-01-02 14:12:42.194  INFO 38001 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:46:40.535 DEBUG 38001 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=10
+2026-01-02 14:46:40.538 DEBUG 38001 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:46:40.571  INFO 38001 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
+2026-01-02 14:46:40.576  INFO 38001 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:46:41.436 DEBUG 38001 --- [nio-8080-exec-5] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:46:41.443 DEBUG 38001 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=10
+2026-01-02 14:46:41.466  INFO 38001 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:46:41.476  INFO 38001 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
+2026-01-02 14:47:16.857 DEBUG 38001 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=10
+2026-01-02 14:47:16.857 DEBUG 38001 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:47:16.866 DEBUG 38001 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=10
+2026-01-02 14:47:16.867 DEBUG 38001 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:47:16.891  INFO 38001 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
+2026-01-02 14:47:16.893  INFO 38001 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:59:16.447  INFO 50732 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 50732 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-02 14:59:16.447 DEBUG 50732 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-02 14:59:16.447  INFO 50732 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-02 14:59:17.791 DEBUG 50732 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-02 14:59:17.910 DEBUG 50732 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-02 14:59:17.916  INFO 50732 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-02 14:59:18.098  INFO 50732 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-02 14:59:18.098  INFO 50732 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-02 14:59:18.108  INFO 50732 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-02 14:59:18.154  INFO 50732 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-02 14:59:18.265  INFO 50732 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.0 seconds (process running for 2.207)
+2026-01-02 14:59:23.428  INFO 50732 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
+2026-01-02 14:59:23.428  INFO 50732 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=10
+2026-01-02 14:59:23.428  INFO 50732 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:59:23.428  INFO 50732 --- [nio-8080-exec-9] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:59:43.170 DEBUG 50732 --- [nio-8080-exec-5] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:59:43.236  INFO 50732 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 14:59:46.923 DEBUG 50732 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=9
+2026-01-02 14:59:48.883  INFO 50732 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=9
+2026-01-02 14:59:48.952  INFO 50732 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=9
+2026-01-02 15:01:00.805  INFO 50732 --- [nio-8080-exec-3] c.nexus.chat.controller.AuthController   : 发送验证码请求: email=jenkenstest@qq.com, type=REGISTER
+2026-01-02 15:01:00.835  INFO 50732 --- [nio-8080-exec-3] c.n.c.service.VerificationCodeService    : 验证码已发送: email=jenkenstest@qq.com, type=REGISTER
+2026-01-02 15:06:15.875  INFO 51303 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 51303 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-02 15:06:15.875 DEBUG 51303 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-02 15:06:15.876  INFO 51303 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-02 15:06:17.077 DEBUG 51303 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-02 15:06:17.197 DEBUG 51303 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-02 15:06:17.201  INFO 51303 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-02 15:06:17.385  INFO 51303 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-02 15:06:17.386  INFO 51303 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-02 15:06:17.396  INFO 51303 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-02 15:06:17.444  INFO 51303 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-02 15:06:17.583  INFO 51303 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 1.861 seconds (process running for 2.065)
+2026-01-02 15:06:24.412  INFO 51303 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=9
+2026-01-02 15:06:27.401  INFO 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 发送验证码请求: email=jenkenstest@qq.com, type=REGISTER
+2026-01-02 15:06:27.428  INFO 51303 --- [nio-8080-exec-6] c.n.c.service.VerificationCodeService    : 验证码已发送: email=jenkenstest@qq.com, type=REGISTER
+2026-01-02 15:06:28.728  INFO 51303 --- [cTaskExecutor-1] com.nexus.chat.service.EmailService      : 验证码邮件发送成功: email=jenkenstest@qq.com
+2026-01-02 15:06:56.658  INFO 51303 --- [nio-8080-exec-8] c.nexus.chat.controller.AuthController   : 用户注册请求: username=test01, email=jenkenstest@qq.com
+2026-01-02 15:06:56.667  INFO 51303 --- [nio-8080-exec-8] c.n.c.service.VerificationCodeService    : 验证码验证成功: email=jenkenstest@qq.com
+2026-01-02 15:06:56.810  INFO 51303 --- [nio-8080-exec-8] c.nexus.chat.controller.AuthController   : 用户注册成功: userId=11, username=test01
+2026-01-02 15:06:56.873 DEBUG 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=11
+2026-01-02 15:07:02.958 DEBUG 51303 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=11
+2026-01-02 15:07:19.959 DEBUG 51303 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=11
+2026-01-02 15:07:22.421  INFO 51303 --- [nio-8080-exec-5] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=11
+2026-01-02 15:07:22.445  INFO 51303 --- [nio-8080-exec-5] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=11
+2026-01-02 15:07:38.916  INFO 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=jenkenstest@qq.com
+2026-01-02 15:07:39.032  INFO 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=11, username=test01
+2026-01-02 15:07:39.083 DEBUG 51303 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=11
+2026-01-02 15:07:43.726  INFO 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=11
+2026-01-02 15:07:43.748  INFO 51303 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=11
