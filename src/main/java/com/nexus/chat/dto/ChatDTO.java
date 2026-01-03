@@ -15,7 +15,11 @@ public class ChatDTO {
     private Long id;
     private Chat.ChatType type;
     private String name;
+    private String description;
+    private String avatar;
+    private Boolean isPrivate;
     private Long createdBy;
+    private Integer memberCount;
     private LocalDateTime createdAt;
     private LocalDateTime lastMessageAt;
     private MessageDTO lastMessage;

@@ -76,11 +76,44 @@ public class ChatService {
 
     @Transactional
     public ChatDTO createGroupChat(Long userId, CreateGroupRequest request) {
+        // Validation
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new BusinessException("Group name is required");
+        }
+        if (request.getName().length() > 100) {
+            throw new BusinessException("Group name must be less than 100 characters");
+        }
+        if (request.getDescription() != null && request.getDescription().length() > 200) {
+            throw new BusinessException("Group description must be less than 200 characters");
+        }
+        if (request.getMemberIds() == null || request.getMemberIds().isEmpty()) {
+            throw new BusinessException("At least one member is required");
+        }
+        if (request.getMemberIds().size() > 200) {
+            throw new BusinessException("Group cannot have more than 200 members");
+        }
+
+        // Verify all member IDs exist
+        for (Long memberId : request.getMemberIds()) {
+            if (!memberId.equals(userId) && !userRepository.existsById(memberId)) {
+                throw new BusinessException("User with ID " + memberId + " not found");
+            }
+        }
+
         // Create group chat
         Chat chat = new Chat();
         chat.setType(Chat.ChatType.group);
-        chat.setName(request.getName());
+        chat.setName(request.getName().trim());
+        chat.setDescription(request.getDescription());
+        chat.setAvatarUrl(request.getAvatar());
+        chat.setIsPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false);
         chat.setCreatedBy(userId);
+
+        // Calculate member count (creator + other members)
+        int memberCount = 1 + (request.getMemberIds() != null ?
+            (int) request.getMemberIds().stream().filter(id -> !id.equals(userId)).count() : 0);
+        chat.setMemberCount(memberCount);
+
         Chat savedChat = chatRepository.save(chat);
 
         // Add creator as admin member
@@ -91,17 +124,34 @@ public class ChatService {
         chatMemberRepository.save(creatorMember);
 
         // Add other members
-        for (Long memberId : request.getMemberIds()) {
-            if (!memberId.equals(userId)) {
-                ChatMember member = new ChatMember();
-                member.setChatId(savedChat.getId());
-                member.setUserId(memberId);
-                member.setIsAdmin(false);
-                chatMemberRepository.save(member);
+        if (request.getMemberIds() != null) {
+            for (Long memberId : request.getMemberIds()) {
+                if (!memberId.equals(userId)) {
+                    ChatMember member = new ChatMember();
+                    member.setChatId(savedChat.getId());
+                    member.setUserId(memberId);
+                    member.setIsAdmin(false);
+                    chatMemberRepository.save(member);
+                }
             }
         }
 
-        return mapToDTO(savedChat, userId);
+        ChatDTO chatDTO = mapToDTO(savedChat, userId);
+
+        // Notify all members about the new group via WebSocket
+        if (request.getMemberIds() != null) {
+            for (Long memberId : request.getMemberIds()) {
+                if (!memberId.equals(userId)) {
+                    ChatDTO memberChatDTO = mapToDTO(savedChat, memberId);
+                    WebSocketMessage wsMessage = new WebSocketMessage(
+                            WebSocketMessage.MessageType.CHAT_CREATED,
+                            memberChatDTO);
+                    messagingTemplate.convertAndSendToUser(String.valueOf(memberId), "/queue/chats", wsMessage);
+                }
+            }
+        }
+
+        return chatDTO;
     }
 
     public List<ChatDTO> getUserChats(Long userId) {
@@ -142,7 +192,11 @@ public class ChatService {
         dto.setId(chat.getId());
         dto.setType(chat.getType());
         dto.setName(chat.getName());
+        dto.setDescription(chat.getDescription());
+        dto.setAvatar(chat.getAvatarUrl());
+        dto.setIsPrivate(chat.getIsPrivate());
         dto.setCreatedBy(chat.getCreatedBy());
+        dto.setMemberCount(chat.getMemberCount());
         dto.setCreatedAt(chat.getCreatedAt());
         dto.setLastMessageAt(chat.getLastMessageAt());
 
