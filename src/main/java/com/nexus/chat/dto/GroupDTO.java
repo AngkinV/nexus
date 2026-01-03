@@ -23,7 +23,7 @@ public class GroupDTO {
     private Boolean isPrivate;
     private Long creatorId;
     private Integer memberCount;
-    private List<UserDTO> members;
+    private List<GroupMemberDTO> members;
     private String lastMessage;
     private LocalDateTime lastMessageTime;
     private Integer unreadCount;

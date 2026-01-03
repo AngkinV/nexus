@@ -138,12 +138,47 @@ public class GroupController {
      * GET /api/groups/{id}/members
      */
     @GetMapping("/{id}/members")
-    public ResponseEntity<List<UserDTO>> getGroupMembers(@PathVariable Long id) {
+    public ResponseEntity<List<GroupMemberDTO>> getGroupMembers(@PathVariable Long id) {
         try {
-            List<UserDTO> members = groupService.getGroupMembers(id);
+            List<GroupMemberDTO> members = groupService.getGroupMembers(id);
             return ResponseEntity.ok(members);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Set or remove admin role for a member
+     * PUT /api/groups/{id}/members/{memberId}/admin?userId={operatorId}&isAdmin=true
+     */
+    @PutMapping("/{id}/members/{memberId}/admin")
+    public ResponseEntity<Void> setAdmin(
+            @PathVariable Long id,
+            @PathVariable Long memberId,
+            @RequestParam Long userId,
+            @RequestParam Boolean isAdmin) {
+        try {
+            groupService.setAdmin(id, userId, memberId, isAdmin);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Transfer group ownership to another member
+     * POST /api/groups/{id}/transfer?userId={ownerId}&newOwnerId={newOwnerId}
+     */
+    @PostMapping("/{id}/transfer")
+    public ResponseEntity<Void> transferOwnership(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestParam Long newOwnerId) {
+        try {
+            groupService.transferOwnership(id, userId, newOwnerId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

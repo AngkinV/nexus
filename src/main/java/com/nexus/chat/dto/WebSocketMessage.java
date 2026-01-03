@@ -33,6 +33,8 @@ public class WebSocketMessage {
         GROUP_MEMBER_JOINED,
         GROUP_MEMBER_LEFT,
         GROUP_MESSAGE,
+        GROUP_ADMIN_CHANGED,
+        GROUP_OWNERSHIP_TRANSFERRED,
 
         // Contact events
         CONTACT_ADDED,

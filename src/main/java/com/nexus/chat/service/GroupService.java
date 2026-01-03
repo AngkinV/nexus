@@ -184,17 +184,23 @@ public class GroupService {
                 member.setRole(ChatMember.MemberRole.member);
                 member.setIsAdmin(false);
                 chatMemberRepository.save(member);
-
-                // Broadcast member joined
-                UserDTO userDTO = mapToUserDTO(user);
-                broadcastGroupEvent("group:member-joined",
-                        Map.of("groupId", groupId, "user", userDTO), groupId);
             }
         }
 
         // Update member count
-        chat.setMemberCount((int) chatMemberRepository.countByChatId(groupId));
+        int newMemberCount = (int) chatMemberRepository.countByChatId(groupId);
+        chat.setMemberCount(newMemberCount);
         chatRepository.save(chat);
+
+        // Broadcast member joined for each new member
+        for (Long newUserId : userIds) {
+            User user = userRepository.findById(newUserId).orElse(null);
+            if (user != null) {
+                UserDTO userDTO = mapToUserDTO(user);
+                broadcastGroupEvent("group:member-joined",
+                        Map.of("groupId", groupId, "member", userDTO, "memberCount", newMemberCount), groupId);
+            }
+        }
     }
 
     /**
@@ -221,12 +227,13 @@ public class GroupService {
         chatMemberRepository.deleteByChatIdAndUserId(groupId, memberUserId);
 
         // Update member count
-        chat.setMemberCount((int) chatMemberRepository.countByChatId(groupId));
+        int newMemberCount = (int) chatMemberRepository.countByChatId(groupId);
+        chat.setMemberCount(newMemberCount);
         chatRepository.save(chat);
 
-        // Broadcast member removed
+        // Broadcast member removed with updated member count
         broadcastGroupEvent("group:member-left",
-                Map.of("groupId", groupId, "userId", memberUserId), groupId);
+                Map.of("groupId", groupId, "memberId", memberUserId, "memberCount", newMemberCount), groupId);
     }
 
     /**
@@ -237,6 +244,10 @@ public class GroupService {
         Chat chat = chatRepository.findById(groupId)
                 .orElseThrow(() -> new BusinessException("error.group.not.found"));
 
+        // Verify user is a member
+        ChatMember member = chatMemberRepository.findByChatIdAndUserId(groupId, userId)
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
+
         // Owner cannot leave (must delete group)
         if (chat.getCreatedBy().equals(userId)) {
             throw new BusinessException("error.group.owner.cannot.leave");
@@ -245,29 +256,113 @@ public class GroupService {
         chatMemberRepository.deleteByChatIdAndUserId(groupId, userId);
 
         // Update member count
-        chat.setMemberCount((int) chatMemberRepository.countByChatId(groupId));
+        int newMemberCount = (int) chatMemberRepository.countByChatId(groupId);
+        chat.setMemberCount(newMemberCount);
         chatRepository.save(chat);
 
-        // Broadcast member left
+        // Broadcast member left with updated member count
         broadcastGroupEvent("group:member-left",
-                Map.of("groupId", groupId, "userId", userId), groupId);
+                Map.of("groupId", groupId, "memberId", userId, "memberCount", newMemberCount), groupId);
     }
 
     /**
-     * Get group members
+     * Get group members with role information
      */
-    public List<UserDTO> getGroupMembers(Long groupId) {
+    public List<GroupMemberDTO> getGroupMembers(Long groupId) {
         List<ChatMember> members = chatMemberRepository.findByChatId(groupId);
         return members.stream()
                 .map(member -> {
                     User user = userRepository.findById(member.getUserId()).orElse(null);
                     if (user != null) {
-                        return mapToUserDTO(user);
+                        return mapToGroupMemberDTO(user, member);
                     }
                     return null;
                 })
-                .filter(u -> u != null)
+                .filter(m -> m != null)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Set or remove admin role for a member
+     */
+    @Transactional
+    public void setAdmin(Long groupId, Long operatorId, Long targetUserId, Boolean isAdmin) {
+        Chat chat = chatRepository.findById(groupId)
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
+
+        // Only owner can set/remove admin
+        if (!chat.getCreatedBy().equals(operatorId)) {
+            throw new BusinessException("error.group.owner.required");
+        }
+
+        // Cannot change owner's admin status
+        if (chat.getCreatedBy().equals(targetUserId)) {
+            throw new BusinessException("error.group.cannot.change.owner.admin");
+        }
+
+        ChatMember targetMember = chatMemberRepository.findByChatIdAndUserId(groupId, targetUserId)
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
+
+        targetMember.setIsAdmin(isAdmin);
+        targetMember.setRole(isAdmin ? ChatMember.MemberRole.admin : ChatMember.MemberRole.member);
+        chatMemberRepository.save(targetMember);
+
+        // Get user info for broadcast
+        User user = userRepository.findById(targetUserId).orElse(null);
+        String nickname = user != null ? user.getNickname() : "Unknown";
+
+        // Broadcast admin change
+        broadcastGroupEvent("group:admin-changed",
+                Map.of("groupId", groupId, "memberId", targetUserId, "nickname", nickname, "isAdmin", isAdmin), groupId);
+    }
+
+    /**
+     * Transfer group ownership to another member
+     */
+    @Transactional
+    public void transferOwnership(Long groupId, Long ownerId, Long newOwnerId) {
+        Chat chat = chatRepository.findById(groupId)
+                .orElseThrow(() -> new BusinessException("error.group.not.found"));
+
+        // Only current owner can transfer
+        if (!chat.getCreatedBy().equals(ownerId)) {
+            throw new BusinessException("error.group.owner.required");
+        }
+
+        // Cannot transfer to self
+        if (ownerId.equals(newOwnerId)) {
+            throw new BusinessException("error.group.cannot.transfer.to.self");
+        }
+
+        // Verify new owner is a member
+        ChatMember newOwnerMember = chatMemberRepository.findByChatIdAndUserId(groupId, newOwnerId)
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
+
+        // Get current owner member
+        ChatMember currentOwnerMember = chatMemberRepository.findByChatIdAndUserId(groupId, ownerId)
+                .orElseThrow(() -> new BusinessException("error.chat.not.member"));
+
+        // Update current owner to admin
+        currentOwnerMember.setRole(ChatMember.MemberRole.admin);
+        currentOwnerMember.setIsAdmin(true);
+        chatMemberRepository.save(currentOwnerMember);
+
+        // Update new owner
+        newOwnerMember.setRole(ChatMember.MemberRole.owner);
+        newOwnerMember.setIsAdmin(true);
+        chatMemberRepository.save(newOwnerMember);
+
+        // Update chat's createdBy
+        chat.setCreatedBy(newOwnerId);
+        chatRepository.save(chat);
+
+        // Get user info for broadcast
+        User newOwner = userRepository.findById(newOwnerId).orElse(null);
+        String newOwnerNickname = newOwner != null ? newOwner.getNickname() : "Unknown";
+
+        // Broadcast ownership transfer
+        broadcastGroupEvent("group:ownership-transferred",
+                Map.of("groupId", groupId, "oldOwnerId", ownerId, "newOwnerId", newOwnerId, "newOwnerNickname", newOwnerNickname), groupId);
     }
 
     /**
@@ -296,7 +391,7 @@ public class GroupService {
         dto.setCreatedAt(chat.getCreatedAt());
 
         // Get members
-        List<UserDTO> members = getGroupMembers(chat.getId());
+        List<GroupMemberDTO> members = getGroupMembers(chat.getId());
         dto.setMembers(members);
 
         // Get last message
@@ -320,6 +415,22 @@ public class GroupService {
                 user.getNickname(),
                 user.getAvatarUrl(),
                 user.getIsOnline(),
+                user.getLastSeen());
+    }
+
+    /**
+     * Map User and ChatMember to GroupMemberDTO
+     */
+    private GroupMemberDTO mapToGroupMemberDTO(User user, ChatMember member) {
+        return new GroupMemberDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getNickname(),
+                user.getAvatarUrl(),
+                user.getIsOnline(),
+                member.getRole().name(),
+                member.getIsAdmin(),
+                member.getJoinedAt(),
                 user.getLastSeen());
     }
 
