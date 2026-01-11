@@ -28,12 +28,8 @@ public class GroupController {
     public ResponseEntity<GroupDTO> createGroup(
             @RequestParam Long userId,
             @RequestBody CreateGroupRequest request) {
-        try {
-            GroupDTO group = groupService.createGroup(userId, request);
-            return ResponseEntity.ok(group);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        GroupDTO group = groupService.createGroup(userId, request);
+        return ResponseEntity.ok(group);
     }
 
     /**
@@ -42,12 +38,8 @@ public class GroupController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<GroupDTO> getGroupById(@PathVariable Long id) {
-        try {
-            GroupDTO group = groupService.getGroupById(id);
-            return ResponseEntity.ok(group);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        GroupDTO group = groupService.getGroupById(id);
+        return ResponseEntity.ok(group);
     }
 
     /**
@@ -59,12 +51,8 @@ public class GroupController {
             @PathVariable Long id,
             @RequestParam Long userId,
             @RequestBody UpdateGroupRequest request) {
-        try {
-            GroupDTO group = groupService.updateGroup(id, userId, request);
-            return ResponseEntity.ok(group);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        GroupDTO group = groupService.updateGroup(id, userId, request);
+        return ResponseEntity.ok(group);
     }
 
     /**
@@ -75,12 +63,8 @@ public class GroupController {
     public ResponseEntity<Void> deleteGroup(
             @PathVariable Long id,
             @RequestParam Long userId) {
-        try {
-            groupService.deleteGroup(id, userId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.deleteGroup(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -92,12 +76,8 @@ public class GroupController {
             @PathVariable Long id,
             @RequestParam Long userId,
             @RequestBody AddMembersRequest request) {
-        try {
-            groupService.addMembers(id, userId, request.getUserIds());
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.addMembers(id, userId, request.getUserIds());
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -109,12 +89,8 @@ public class GroupController {
             @PathVariable Long id,
             @PathVariable Long memberId,
             @RequestParam Long userId) {
-        try {
-            groupService.removeMember(id, userId, memberId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.removeMember(id, userId, memberId);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -125,12 +101,8 @@ public class GroupController {
     public ResponseEntity<Void> leaveGroup(
             @PathVariable Long id,
             @RequestParam Long userId) {
-        try {
-            groupService.leaveGroup(id, userId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.leaveGroup(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -139,12 +111,8 @@ public class GroupController {
      */
     @GetMapping("/{id}/members")
     public ResponseEntity<List<GroupMemberDTO>> getGroupMembers(@PathVariable Long id) {
-        try {
-            List<GroupMemberDTO> members = groupService.getGroupMembers(id);
-            return ResponseEntity.ok(members);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        List<GroupMemberDTO> members = groupService.getGroupMembers(id);
+        return ResponseEntity.ok(members);
     }
 
     /**
@@ -157,12 +125,8 @@ public class GroupController {
             @PathVariable Long memberId,
             @RequestParam Long userId,
             @RequestParam Boolean isAdmin) {
-        try {
-            groupService.setAdmin(id, userId, memberId, isAdmin);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.setAdmin(id, userId, memberId, isAdmin);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -174,12 +138,8 @@ public class GroupController {
             @PathVariable Long id,
             @RequestParam Long userId,
             @RequestParam Long newOwnerId) {
-        try {
-            groupService.transferOwnership(id, userId, newOwnerId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        groupService.transferOwnership(id, userId, newOwnerId);
+        return ResponseEntity.ok().build();
     }
 
     /**

@@ -439,7 +439,7 @@ public class GroupService {
      */
     private void broadcastGroupEvent(String eventType, Object payload, Long groupId) {
         WebSocketMessage wsMessage = new WebSocketMessage(
-                WebSocketMessage.MessageType.valueOf(eventType.replace(":", "_").toUpperCase()),
+                WebSocketMessage.MessageType.valueOf(eventType.replace(":", "_").replace("-", "_").toUpperCase()),
                 payload);
         messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
     }
