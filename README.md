@@ -210,6 +210,6 @@ mvn clean package
 - WebSocket 使用 SockJS 回退以提高浏览器兼容性
 - 开发环境中已启用 CORS（生产环境需要配置）
 
-## License
+## 许可证
 
-MIT License
+本项目基于 [MIT](LICENSE) 许可证开源。
