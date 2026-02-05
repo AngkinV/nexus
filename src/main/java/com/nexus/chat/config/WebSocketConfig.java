@@ -20,9 +20,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         log.info("配置 WebSocket 消息代理: /topic, /queue");
-        config.enableSimpleBroker("/topic", "/queue");
+        config.enableSimpleBroker("/topic", "/queue")
+                .setHeartbeatValue(new long[]{10000, 10000})  // 服务端心跳: 10秒发送, 10秒期望接收
+                .setTaskScheduler(heartbeatScheduler());
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
+    }
+
+    @org.springframework.context.annotation.Bean
+    public org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler heartbeatScheduler() {
+        org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler scheduler =
+                new org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("ws-heartbeat-");
+        scheduler.initialize();
+        return scheduler;
     }
 
     @Override

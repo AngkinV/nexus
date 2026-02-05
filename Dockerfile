@@ -25,15 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && \
 # 从构建阶段复制 jar
 COPY --from=builder /app/target/*.jar app.jar
 
-# 创建上传目录
-RUN mkdir -p /app/uploads
-
-# 非 root 用户运行（安全最佳实践）
-RUN groupadd -g 1001 appgroup && \
-    useradd -u 1001 -g appgroup -s /bin/bash appuser && \
-    chown -R appuser:appgroup /app
-
-USER appuser
+# 创建上传目录并设置权限
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
 
 EXPOSE 8080
 

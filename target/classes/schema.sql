@@ -264,3 +264,26 @@ CREATE TABLE IF NOT EXISTS file_uploads (
       INDEX idx_email_code (email, code),
       INDEX idx_expires_at (expires_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ -- 扩展 file_uploads 表
+  ALTER TABLE file_uploads
+  ADD COLUMN file_id VARCHAR(36) UNIQUE AFTER id,
+  ADD COLUMN original_name VARCHAR(255) AFTER filename,
+  ADD COLUMN stored_name VARCHAR(255) AFTER original_name,
+  ADD COLUMN mime_type VARCHAR(100) AFTER file_size,
+  ADD COLUMN md5_hash VARCHAR(32) AFTER mime_type,
+  ADD COLUMN thumbnail_path VARCHAR(500) AFTER md5_hash,
+  ADD COLUMN uploader_id BIGINT AFTER thumbnail_path,
+  ADD COLUMN expires_at TIMESTAMP NULL AFTER created_at;
+
+  -- 添加索引
+  CREATE INDEX idx_file_id ON file_uploads(file_id);
+  CREATE INDEX idx_uploader ON file_uploads(uploader_id);
+  CREATE INDEX idx_expires ON file_uploads(expires_at);
+  CREATE INDEX idx_md5 ON file_uploads(md5_hash);
+
+  -- 更新现有记录的 file_id（如果有旧数据）
+  UPDATE file_uploads SET file_id = UUID() WHERE file_id IS NULL;
+
+  -- 设置 file_id 为非空
+  ALTER TABLE file_uploads MODIFY COLUMN file_id VARCHAR(36) NOT NULL;

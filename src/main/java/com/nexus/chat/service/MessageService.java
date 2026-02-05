@@ -3,10 +3,12 @@ package com.nexus.chat.service;
 import com.nexus.chat.dto.MessageDTO;
 import com.nexus.chat.exception.BusinessException;
 import com.nexus.chat.model.ChatMember;
+import com.nexus.chat.model.FileUpload;
 import com.nexus.chat.model.Message;
 import com.nexus.chat.model.MessageReadStatus;
 import com.nexus.chat.model.User;
 import com.nexus.chat.repository.ChatMemberRepository;
+import com.nexus.chat.repository.FileUploadRepository;
 import com.nexus.chat.repository.MessageReadStatusRepository;
 import com.nexus.chat.repository.MessageRepository;
 import com.nexus.chat.repository.UserRepository;
@@ -32,6 +34,7 @@ public class MessageService {
     private final UserRepository userRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final MessageReadStatusRepository messageReadStatusRepository;
+    private final FileUploadRepository fileUploadRepository;
 
     @Transactional
     public MessageDTO sendMessage(Long chatId, Long senderId, String content, Message.MessageType messageType,
@@ -149,6 +152,38 @@ public class MessageService {
         if (sender != null) {
             dto.setSenderNickname(sender.getNickname());
             dto.setSenderAvatar(sender.getAvatarUrl());
+        }
+
+        // 如果是文件消息，填充文件详情
+        if ((message.getMessageType() == Message.MessageType.file ||
+             message.getMessageType() == Message.MessageType.image) &&
+            message.getFileUrl() != null) {
+
+            // 尝试从 fileUrl 中提取 fileId
+            String fileUrl = message.getFileUrl();
+            String fileId = null;
+
+            // fileUrl 格式可能是 /uploads/2024/01/01/uuid.ext 或 /api/files/download/uuid
+            if (fileUrl.contains("/api/files/download/")) {
+                fileId = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            } else if (fileUrl.contains("/uploads/")) {
+                // 从路径中提取文件名（不含扩展名）作为fileId
+                String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                if (filename.contains(".")) {
+                    fileId = filename.substring(0, filename.lastIndexOf("."));
+                }
+            }
+
+            if (fileId != null) {
+                fileUploadRepository.findByFileId(fileId).ifPresent(fileUpload -> {
+                    dto.setFileId(fileUpload.getFileId());
+                    dto.setFileName(fileUpload.getOriginalName());
+                    dto.setFileSize(fileUpload.getFileSize());
+                    dto.setMimeType(fileUpload.getMimeType());
+                    dto.setDownloadUrl("/api/files/download/" + fileUpload.getFileId());
+                    dto.setPreviewUrl("/api/files/preview/" + fileUpload.getFileId());
+                });
+            }
         }
 
         return dto;

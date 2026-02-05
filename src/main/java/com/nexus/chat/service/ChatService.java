@@ -234,17 +234,16 @@ public class ChatService {
             Message lastMsg = messages.get(0);
             User sender = userRepository.findById(lastMsg.getSenderId()).orElse(null);
             if (sender != null) {
-                MessageDTO msgDTO = new MessageDTO(
-                        lastMsg.getId(),
-                        lastMsg.getChatId(),
-                        lastMsg.getSenderId(),
-                        sender.getNickname(),
-                        sender.getAvatarUrl(),
-                        lastMsg.getContent(),
-                        lastMsg.getMessageType(),
-                        lastMsg.getFileUrl(),
-                        lastMsg.getCreatedAt(),
-                        null);
+                MessageDTO msgDTO = new MessageDTO();
+                msgDTO.setId(lastMsg.getId());
+                msgDTO.setChatId(lastMsg.getChatId());
+                msgDTO.setSenderId(lastMsg.getSenderId());
+                msgDTO.setSenderNickname(sender.getNickname());
+                msgDTO.setSenderAvatar(sender.getAvatarUrl());
+                msgDTO.setContent(lastMsg.getContent());
+                msgDTO.setMessageType(lastMsg.getMessageType());
+                msgDTO.setFileUrl(lastMsg.getFileUrl());
+                msgDTO.setCreatedAt(lastMsg.getCreatedAt());
                 dto.setLastMessage(msgDTO);
             }
         }

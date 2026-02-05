@@ -21,4 +21,12 @@ public class MessageDTO {
     private String fileUrl;
     private LocalDateTime createdAt;
     private Boolean isRead;
+
+    // 文件消息扩展字段
+    private String fileId;
+    private String fileName;
+    private Long fileSize;
+    private String mimeType;
+    private String downloadUrl;
+    private String previewUrl;
 }
