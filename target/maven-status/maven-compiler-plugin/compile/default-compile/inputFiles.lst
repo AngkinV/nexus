@@ -12,6 +12,7 @@
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/model/MessageReadStatus.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/ContactDTO.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/UpdateProfileRequest.java
+/Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/dto/GroupMemberDTO.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/MessageReadStatusRepository.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/MessageRepository.java
 /Users/anglv/Nexus Chat/nexus-chat-backend/src/main/java/com/nexus/chat/repository/UserSecuritySettingsRepository.java

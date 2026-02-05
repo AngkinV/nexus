@@ -1,0 +1,295 @@
+2026-01-11 13:44:40.831  INFO 5720 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 5720 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-11 13:44:40.831 DEBUG 5720 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-11 13:44:40.831  INFO 5720 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-11 13:44:43.711 DEBUG 5720 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-11 13:44:43.908 DEBUG 5720 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-11 13:44:43.913  INFO 5720 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-11 13:44:44.114  INFO 5720 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-11 13:44:44.115  INFO 5720 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-11 13:44:44.141  INFO 5720 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-11 13:44:44.207  INFO 5720 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-11 13:44:44.328  INFO 5720 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 3.675 seconds (process running for 3.985)
+2026-01-11 13:45:20.600 DEBUG 5720 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 13:45:20.767  INFO 5720 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 13:57:14.462  INFO 7575 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 7575 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-11 13:57:14.463 DEBUG 7575 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-11 13:57:14.463  INFO 7575 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-11 13:57:15.848 DEBUG 7575 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-11 13:57:15.969 DEBUG 7575 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-11 13:57:15.972  INFO 7575 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-11 13:57:16.146  INFO 7575 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-11 13:57:16.146  INFO 7575 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-11 13:57:16.157  INFO 7575 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-11 13:57:16.202  INFO 7575 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-11 13:57:16.311  INFO 7575 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.047 seconds (process running for 2.254)
+2026-01-11 13:57:23.128  INFO 7575 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 13:57:34.927 DEBUG 7575 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 13:57:37.944  INFO 7575 --- [nio-8080-exec-1] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=12
+2026-01-11 13:57:38.014  INFO 7575 --- [nio-8080-exec-1] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=12
+2026-01-11 13:57:56.674  INFO 7575 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=464394562@qq.com
+2026-01-11 13:57:56.789  INFO 7575 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=6, username=mml02
+2026-01-11 13:57:56.826 DEBUG 7575 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=6
+2026-01-11 13:58:20.540  INFO 7575 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=464394567@qq.com
+2026-01-11 13:58:20.548  WARN 7575 --- [nio-8080-exec-6] c.nexus.chat.controller.AuthController   : 用户登录失败: usernameOrEmail=464394567@qq.com, reason=error.auth.invalid.credentials
+2026-01-11 13:58:25.794  INFO 7575 --- [nio-8080-exec-5] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=464394561@qq.com
+2026-01-11 13:58:25.892  INFO 7575 --- [nio-8080-exec-5] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=5, username=mml01
+2026-01-11 13:58:25.963 DEBUG 7575 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=5
+2026-01-11 13:58:25.994  INFO 7575 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=5
+2026-01-11 13:59:21.127 DEBUG 7575 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 创建群聊: userId=6, name=群组test01
+2026-01-11 13:59:21.193  INFO 7575 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 群聊创建成功: chatId=11, name=群组test01
+2026-01-11 14:02:28.291 DEBUG 7575 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=6
+2026-01-11 14:02:30.107  INFO 7575 --- [nio-8080-exec-4] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=6
+2026-01-11 14:02:30.118  INFO 7575 --- [nio-8080-exec-4] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=6
+2026-01-11 14:02:35.445  INFO 7575 --- [nio-8080-exec-2] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=3677389639@qq.com
+2026-01-11 14:02:35.565  INFO 7575 --- [nio-8080-exec-2] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=12, username=3677389639@qq.com
+2026-01-11 14:02:35.616 DEBUG 7575 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:02:39.623  INFO 7575 --- [io-8080-exec-10] c.nexus.chat.controller.AuthController   : 用户登出请求: userId=5
+2026-01-11 14:02:39.631  INFO 7575 --- [io-8080-exec-10] c.nexus.chat.controller.AuthController   : 用户登出成功: userId=5
+2026-01-11 14:02:52.271  INFO 7575 --- [nio-8080-exec-1] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=3664392857@qq.com
+2026-01-11 14:02:52.377  INFO 7575 --- [nio-8080-exec-1] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=13, username=test0009
+2026-01-11 14:02:52.438 DEBUG 7575 --- [io-8080-exec-10] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:04:51.047 ERROR 7575 --- [nio-8080-exec-8] c.n.c.exception.GlobalExceptionHandler   : 运行时异常: No enum constant com.nexus.chat.dto.WebSocketMessage.MessageType.GROUP_MEMBER-LEFT
+java.lang.IllegalArgumentException: No enum constant com.nexus.chat.dto.WebSocketMessage.MessageType.GROUP_MEMBER-LEFT
+	at java.base/java.lang.Enum.valueOf(Enum.java:273)
+	at com.nexus.chat.dto.WebSocketMessage$MessageType.valueOf(WebSocketMessage.java:14)
+	at com.nexus.chat.service.GroupService.broadcastGroupEvent(GroupService.java:442)
+	at com.nexus.chat.service.GroupService.leaveGroup(GroupService.java:264)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:352)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765)
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:385)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:717)
+	at com.nexus.chat.service.GroupService$$SpringCGLIB$$0.leaveGroup(<generated>)
+	at com.nexus.chat.controller.GroupController.leaveGroup(GroupController.java:104)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+2026-01-11 14:05:02.098  WARN 7575 --- [nio-8080-exec-5] c.n.c.exception.GlobalExceptionHandler   : 业务异常: messageKey=error.group.owner.cannot.leave, args=null
+2026-01-11 14:07:39.445  INFO 8250 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 8250 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-11 14:07:39.445 DEBUG 8250 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-11 14:07:39.446  INFO 8250 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-11 14:07:40.820 DEBUG 8250 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-11 14:07:40.955 DEBUG 8250 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-11 14:07:40.959  INFO 8250 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-11 14:07:41.147  INFO 8250 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-11 14:07:41.148  INFO 8250 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-11 14:07:41.157  INFO 8250 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-11 14:07:41.204  INFO 8250 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-11 14:07:41.320  INFO 8250 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.022 seconds (process running for 2.208)
+2026-01-11 14:07:48.109  INFO 8250 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=5
+2026-01-11 14:07:48.109  INFO 8250 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:07:53.034 DEBUG 8250 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:07:53.129  INFO 8250 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:07:58.618 DEBUG 8250 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:07:58.671  INFO 8250 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:08:10.654  WARN 8250 --- [nio-8080-exec-2] c.n.c.exception.GlobalExceptionHandler   : 业务异常: messageKey=error.group.owner.cannot.leave, args=null
+2026-01-11 14:09:17.862 DEBUG 8250 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:09:17.891  INFO 8250 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:12:50.713 DEBUG 8250 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 创建私聊: userId=12, contactId=13
+2026-01-11 14:12:50.775  INFO 8250 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 私聊创建成功: chatId=12, userId=12, contactId=13
+2026-01-11 14:13:00.977  WARN 8250 --- [io-8080-exec-10] c.n.c.exception.GlobalExceptionHandler   : 业务异常: messageKey=error.group.owner.cannot.leave, args=null
+2026-01-11 14:21:06.279 DEBUG 8250 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:21:06.303 DEBUG 8250 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:21:06.326  INFO 8250 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:21:06.369  INFO 8250 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:21:47.859 DEBUG 8250 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:21:47.868 DEBUG 8250 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:21:47.909  INFO 8250 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:21:47.943  INFO 8250 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:22:26.259 DEBUG 8250 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:22:26.305 DEBUG 8250 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:23:48.969 DEBUG 8250 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:23:48.993 DEBUG 8250 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:23:49.038  INFO 8250 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:23:49.081  INFO 8250 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:24:07.058 DEBUG 8250 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:24:07.086 DEBUG 8250 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:24:07.102  INFO 8250 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:24:07.151  INFO 8250 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:25:47.602  INFO 9580 --- [           main] com.nexus.chat.NexusChatApplication      : Starting NexusChatApplication using Java 17.0.14 with PID 9580 (/Users/anglv/Nexus Chat/nexus-chat-backend/target/classes started by anglv in /Users/anglv/Nexus Chat/nexus-chat-backend)
+2026-01-11 14:25:47.602 DEBUG 9580 --- [           main] com.nexus.chat.NexusChatApplication      : Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-01-11 14:25:47.604  INFO 9580 --- [           main] com.nexus.chat.NexusChatApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-11 14:25:49.113 DEBUG 9580 --- [           main] com.nexus.chat.config.SecurityConfig     : 初始化 BCrypt 密码编码器
+2026-01-11 14:25:49.237 DEBUG 9580 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 入站通道拦截器
+2026-01-11 14:25:49.241  INFO 9580 --- [           main] com.nexus.chat.config.WebSocketConfig    : 配置 WebSocket 消息代理: /topic, /queue
+2026-01-11 14:25:49.411  INFO 9580 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 Spring Security 过滤链
+2026-01-11 14:25:49.411  INFO 9580 --- [           main] com.nexus.chat.config.SecurityConfig     : 配置 CORS 策略
+2026-01-11 14:25:49.421  INFO 9580 --- [           main] com.nexus.chat.config.WebSocketConfig    : 注册 WebSocket STOMP 端点: /ws
+2026-01-11 14:25:49.468  INFO 9580 --- [           main] com.nexus.chat.config.SecurityConfig     : Spring Security 配置完成
+2026-01-11 14:25:49.585  INFO 9580 --- [           main] com.nexus.chat.NexusChatApplication      : Started NexusChatApplication in 2.407 seconds (process running for 2.718)
+2026-01-11 14:25:50.128  INFO 9580 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:25:50.128  INFO 9580 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:25:50.128  INFO 9580 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:25:50.128  INFO 9580 --- [nio-8080-exec-9] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:25:50.139  INFO 9580 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:25:50.140  INFO 9580 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:25:50.154  INFO 9580 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:25:50.154  INFO 9580 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:25:50.168  INFO 9580 --- [nio-8080-exec-9] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:25:50.168  INFO 9580 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:26:29.123 DEBUG 9580 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:26:29.446  INFO 9580 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:26:52.415 DEBUG 9580 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:27:16.593  INFO 9580 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登录请求: usernameOrEmail=3664392857@qq.com
+2026-01-11 14:27:16.704  INFO 9580 --- [nio-8080-exec-7] c.nexus.chat.controller.AuthController   : 用户登录成功: userId=13, username=test0009
+2026-01-11 14:27:16.796 DEBUG 9580 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:27:16.849  INFO 9580 --- [nio-8080-exec-3] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:28:05.802  WARN 9580 --- [nio-8080-exec-7] c.n.c.exception.GlobalExceptionHandler   : 业务异常: messageKey=error.user.not.found, args=null
+2026-01-11 14:32:48.019 DEBUG 9580 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:32:48.097  INFO 9580 --- [nio-8080-exec-9] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:32:55.020 DEBUG 9580 --- [nio-8080-exec-9] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:32:55.087  INFO 9580 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:33:18.356 DEBUG 9580 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:33:18.463  INFO 9580 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:33:37.247  WARN 9580 --- [nio-8080-exec-3] c.n.c.exception.GlobalExceptionHandler   : 业务异常: messageKey=error.group.admin.add.member, args=null
+2026-01-11 14:43:52.228 DEBUG 9580 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:43:52.245 DEBUG 9580 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:43:52.246 DEBUG 9580 --- [io-8080-exec-11] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:43:52.270 DEBUG 9580 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:43:52.288  INFO 9580 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:43:52.340  INFO 9580 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:44:09.862 DEBUG 9580 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:44:09.873 DEBUG 9580 --- [nio-8080-exec-5] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:44:09.907  INFO 9580 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:44:09.939  INFO 9580 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:44:18.833 DEBUG 9580 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:44:18.864 DEBUG 9580 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:44:18.881  INFO 9580 --- [io-8080-exec-11] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:44:18.934  INFO 9580 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:44:43.631 DEBUG 9580 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:44:43.664 DEBUG 9580 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:44:43.672  INFO 9580 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:44:43.724  INFO 9580 --- [io-8080-exec-11] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:44:59.537 DEBUG 9580 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:44:59.562 DEBUG 9580 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:44:59.577  INFO 9580 --- [nio-8080-exec-6] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:44:59.625  INFO 9580 --- [nio-8080-exec-9] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:45:14.605 DEBUG 9580 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:45:14.638 DEBUG 9580 --- [nio-8080-exec-3] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:45:14.650  INFO 9580 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:45:14.698  INFO 9580 --- [io-8080-exec-10] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:46:49.179 DEBUG 9580 --- [nio-8080-exec-8] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:46:49.253 DEBUG 9580 --- [io-8080-exec-13] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:46:49.281  INFO 9580 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:46:49.306  INFO 9580 --- [nio-8080-exec-2] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:47:06.153 DEBUG 9580 --- [nio-8080-exec-4] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:47:06.212 DEBUG 9580 --- [nio-8080-exec-5] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 14:47:06.253  INFO 9580 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 14:47:06.266  INFO 9580 --- [nio-8080-exec-8] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 14:47:51.844 DEBUG 9580 --- [nio-8080-exec-2] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 14:47:51.933  INFO 9580 --- [io-8080-exec-13] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 15:37:53.910 DEBUG 9580 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 15:37:53.912 DEBUG 9580 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 15:37:53.957  INFO 9580 --- [io-8080-exec-12] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 15:37:53.990  INFO 9580 --- [io-8080-exec-14] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 15:38:04.914 DEBUG 9580 --- [nio-8080-exec-5] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 15:38:04.962  INFO 9580 --- [nio-8080-exec-7] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 15:38:04.967 DEBUG 9580 --- [nio-8080-exec-1] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 15:38:05.029  INFO 9580 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 15:38:34.308 DEBUG 9580 --- [nio-8080-exec-6] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 15:38:34.331 DEBUG 9580 --- [io-8080-exec-11] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 15:38:34.344  INFO 9580 --- [nio-8080-exec-5] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 15:38:34.395  INFO 9580 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 15:39:52.839 DEBUG 9580 --- [io-8080-exec-10] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 15:39:52.959  INFO 9580 --- [nio-8080-exec-1] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
+2026-01-11 16:18:31.418 DEBUG 9580 --- [io-8080-exec-12] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=12
+2026-01-11 16:18:31.432 DEBUG 9580 --- [nio-8080-exec-7] c.nexus.chat.controller.ChatController   : 获取用户聊天列表: userId=13
+2026-01-11 16:18:31.494  INFO 9580 --- [nio-8080-exec-4] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=13
+2026-01-11 16:18:31.515  INFO 9580 --- [io-8080-exec-12] c.n.c.c.WebSocketAuthChannelInterceptor  : WebSocket 用户连接: userId=12
