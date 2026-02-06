@@ -4,7 +4,6 @@ com/nexus/chat/repository/UserSessionRepository.class
 com/nexus/chat/model/MessageReadStatus.class
 com/nexus/chat/service/VerificationCodeService.class
 com/nexus/chat/dto/PrivacySettingsDTO.class
-com/nexus/chat/controller/MessageController.class
 com/nexus/chat/config/I18nConfig.class
 com/nexus/chat/dto/ChangePasswordRequest.class
 com/nexus/chat/model/EmailVerificationCode$CodeType.class

@@ -5,7 +5,6 @@ import com.nexus.chat.dto.ContactRequestDTO;
 import com.nexus.chat.dto.UserDTO;
 import com.nexus.chat.dto.WebSocketMessage;
 import com.nexus.chat.exception.BusinessException;
-import com.nexus.chat.model.Chat;
 import com.nexus.chat.model.Contact;
 import com.nexus.chat.model.ContactRequest;
 import com.nexus.chat.model.ContactRequest.RequestStatus;
@@ -351,13 +350,25 @@ public class ContactService {
     }
 
     /**
-     * Get contacts list with user details
+     * Get contacts list with user details.
+     * Batch-loads all users in 2 queries instead of N+1.
      */
     public List<UserDTO> getContacts(Long userId) {
         List<Contact> contacts = contactRepository.findByUserId(userId);
+        if (contacts.isEmpty()) {
+            return List.of();
+        }
+
+        // Batch load all contact users in 1 query
+        List<Long> contactUserIds = contacts.stream()
+                .map(Contact::getContactUserId)
+                .collect(Collectors.toList());
+        Map<Long, User> usersById = userRepository.findAllByIdIn(contactUserIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
         return contacts.stream()
                 .map(contact -> {
-                    User user = userRepository.findById(contact.getContactUserId()).orElse(null);
+                    User user = usersById.get(contact.getContactUserId());
                     if (user != null) {
                         return new UserDTO(
                                 user.getId(),
@@ -374,15 +385,35 @@ public class ContactService {
     }
 
     /**
-     * Get contacts list with detailed information (respecting privacy settings)
+     * Get contacts list with detailed information (respecting privacy settings).
+     * Optimized: Batch-loads all data in 3 queries instead of N+1.
+     * Before: 1 + N queries (1 for contacts, N for privacy settings)
+     * After: 3 queries total (contacts, users, privacy settings)
      */
     public List<ContactDTO> getContactsDetailed(Long userId) {
         List<Contact> contacts = contactRepository.findByUserId(userId);
+        if (contacts.isEmpty()) {
+            return List.of();
+        }
+
+        // Batch load all contact users in 1 query
+        List<Long> contactUserIds = contacts.stream()
+                .map(Contact::getContactUserId)
+                .collect(Collectors.toList());
+        Map<Long, User> usersById = userRepository.findAllByIdIn(contactUserIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        // Batch load all privacy settings in 1 query (eliminates N+1)
+        Map<Long, UserPrivacySettings> privacyByUserId = privacySettingsRepository
+                .findByUserIdIn(contactUserIds).stream()
+                .collect(Collectors.toMap(UserPrivacySettings::getUserId, p -> p));
+
         return contacts.stream()
                 .map(contact -> {
-                    User user = userRepository.findById(contact.getContactUserId()).orElse(null);
+                    User user = usersById.get(contact.getContactUserId());
                     if (user != null) {
-                        return mapToContactDTOWithPrivacy(contact, user);
+                        UserPrivacySettings privacy = privacyByUserId.get(user.getId());
+                        return mapToContactDTOWithPrivacy(contact, user, privacy);
                     }
                     return null;
                 })
@@ -428,23 +459,21 @@ public class ContactService {
     }
 
     /**
-     * Notify contacts about user status change
+     * Notify contacts about user status change.
+     * Uses reverse lookup index instead of full table scan.
+     * Before: findAll() loaded entire contacts table + in-memory filter
+     * After: findByContactUserId() uses idx_contacts_contact_user index
      */
     public void notifyContactsOfStatusChange(Long userId, boolean isOnline) {
-        // Find users who have this user as a contact
-        List<Contact> allContacts = contactRepository.findAll();
-        List<Long> usersWhoHaveThisUserAsContact = allContacts.stream()
-                .filter(c -> c.getContactUserId().equals(userId))
-                .map(Contact::getUserId)
-                .collect(Collectors.toList());
+        // Indexed reverse lookup: find users who have this user as a contact
+        List<Contact> reverseContacts = contactRepository.findByContactUserId(userId);
 
         WebSocketMessage wsMessage = new WebSocketMessage(
                 WebSocketMessage.MessageType.CONTACT_STATUS_CHANGED,
                 Map.of("userId", userId, "isOnline", isOnline));
 
-        // Notify each user who has this user as a contact
-        for (Long targetUserId : usersWhoHaveThisUserAsContact) {
-            messagingTemplate.convertAndSend("/topic/user." + targetUserId + ".contacts", wsMessage);
+        for (Contact contact : reverseContacts) {
+            messagingTemplate.convertAndSend("/topic/user." + contact.getUserId() + ".contacts", wsMessage);
         }
     }
 
@@ -466,12 +495,10 @@ public class ContactService {
     }
 
     /**
-     * Map Contact and User to ContactDTO with privacy settings applied
+     * Map Contact and User to ContactDTO with privacy settings applied.
+     * Accepts pre-loaded privacy settings to avoid N+1 queries.
      */
-    private ContactDTO mapToContactDTOWithPrivacy(Contact contact, User user) {
-        UserPrivacySettings privacy = privacySettingsRepository.findByUserId(user.getId())
-                .orElse(null);
-
+    private ContactDTO mapToContactDTOWithPrivacy(Contact contact, User user, UserPrivacySettings privacy) {
         ContactDTO dto = new ContactDTO();
         dto.setId(contact.getId());
         dto.setUserId(user.getId());

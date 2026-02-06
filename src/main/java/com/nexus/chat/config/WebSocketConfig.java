@@ -17,6 +17,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
 
+    @Autowired
+    private MessageValidationInterceptor messageValidationInterceptor;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         log.info("配置 WebSocket 消息代理: /topic, /queue");
@@ -40,15 +43,36 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         log.info("注册 WebSocket STOMP 端点: /ws");
+        // Register with SockJS, allowing XHR fallback
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .setAllowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "https://chat.angkin.cn",
+                        "https://*.angkin.cn",
+                        "app://*"
+                )
+                .withSockJS()
+                .setSessionCookieNeeded(false)
+                .setStreamBytesLimit(512 * 1024)
+                .setHttpMessageCacheSize(1000)
+                .setDisconnectDelay(30 * 1000);
+
+        // Also register native WebSocket endpoint (no SockJS)
+        registry.addEndpoint("/ws-native")
+                .setAllowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "https://chat.angkin.cn",
+                        "https://*.angkin.cn",
+                        "app://*"
+                );
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         log.debug("配置 WebSocket 入站通道拦截器");
-        registration.interceptors(webSocketAuthChannelInterceptor);
+        registration.interceptors(webSocketAuthChannelInterceptor, messageValidationInterceptor);
     }
 
 }

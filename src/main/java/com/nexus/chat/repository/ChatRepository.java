@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,5 +45,21 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
            "(SELECT cm1.chatId FROM ChatMember cm1 WHERE cm1.userId = :userId1) AND c.id IN " +
            "(SELECT cm2.chatId FROM ChatMember cm2 WHERE cm2.userId = :userId2)")
     Optional<Chat> findDirectChatBetweenUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+    /**
+     * Find chats updated after a timestamp for delta sync.
+     * Returns chats where the user is a member and lastMessageAt > since.
+     */
+    @Query("SELECT c FROM Chat c JOIN ChatMember cm ON c.id = cm.chatId " +
+           "WHERE cm.userId = :userId AND c.lastMessageAt > :since " +
+           "ORDER BY c.lastMessageAt DESC")
+    List<Chat> findByUserIdAndLastMessageAtAfter(
+            @Param("userId") Long userId,
+            @Param("since") LocalDateTime since);
+
+    /**
+     * Find chats by IDs (batch load for optimization)
+     */
+    List<Chat> findByIdIn(List<Long> ids);
 
 }

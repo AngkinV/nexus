@@ -86,11 +86,14 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT,
     message_type ENUM('text', 'image', 'file', 'emoji') NOT NULL DEFAULT 'text',
     file_url TEXT,
+    sequence_number BIGINT DEFAULT NULL,
+    client_message_id VARCHAR(36) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_chat_id_created_at (chat_id, created_at),
-    INDEX idx_sender_id (sender_id)
+    INDEX idx_sender_id (sender_id),
+    UNIQUE INDEX idx_messages_client_msg_id (client_message_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Message Read Status Table
@@ -264,3 +267,24 @@ CREATE TABLE IF NOT EXISTS file_uploads (
       INDEX idx_email_code (email, code),
       INDEX idx_expires_at (expires_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  -- ============================================
+  -- 10. Performance Optimization Indexes
+  -- ============================================
+
+  -- Contacts: reverse lookup (who has this user as a contact)
+  -- Needed for efficient status change notifications
+  CREATE INDEX IF NOT EXISTS idx_contacts_contact_user ON contacts(contact_user_id);
+
+  -- Contact requests: faster pending request lookup
+  CREATE INDEX IF NOT EXISTS idx_contact_requests_to_status ON contact_requests(to_user_id, status);
+
+  -- ============================================
+  -- 11. Message delivery fields (ACK + sequence)
+  -- Reserved for Phase 3 implementation
+  -- ============================================
+  -- Migration for existing databases (Phase 3: message sequencing + deduplication)
+  -- Run these manually if the messages table already exists:
+  -- ALTER TABLE messages ADD COLUMN sequence_number BIGINT DEFAULT NULL;
+  -- ALTER TABLE messages ADD COLUMN client_message_id VARCHAR(36) DEFAULT NULL;
+  -- CREATE UNIQUE INDEX idx_messages_client_msg_id ON messages(client_message_id);

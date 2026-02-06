@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,5 +47,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Count users by online status
      */
     long countByIsOnlineTrue();
+
+    /**
+     * Batch find users by IDs (eliminates N+1 in ChatService.mapToDTO)
+     */
+    List<User> findAllByIdIn(Collection<Long> ids);
 
 }

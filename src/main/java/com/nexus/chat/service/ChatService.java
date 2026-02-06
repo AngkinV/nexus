@@ -20,8 +20,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,8 +37,8 @@ public class ChatService {
 
     @Transactional
     public ChatDTO createDirectChat(Long userId, Long contactId) {
-        // Check if direct chat already exists between these two users
-        Optional<Chat> existingChat = findExistingDirectChat(userId, contactId);
+        // Use the existing repository query instead of manual iteration
+        Optional<Chat> existingChat = chatRepository.findDirectChatBetweenUsers(userId, contactId);
         if (existingChat.isPresent()) {
             return mapToDTO(existingChat.get(), userId);
         }
@@ -93,10 +93,14 @@ public class ChatService {
             throw new BusinessException("Group cannot have more than 200 members");
         }
 
-        // Verify all member IDs exist
-        for (Long memberId : request.getMemberIds()) {
-            if (!memberId.equals(userId) && !userRepository.existsById(memberId)) {
-                throw new BusinessException("User with ID " + memberId + " not found");
+        // Batch verify all member IDs exist
+        List<Long> otherMemberIds = request.getMemberIds().stream()
+                .filter(id -> !id.equals(userId))
+                .collect(Collectors.toList());
+        if (!otherMemberIds.isEmpty()) {
+            List<User> existingUsers = userRepository.findAllByIdIn(otherMemberIds);
+            if (existingUsers.size() != otherMemberIds.size()) {
+                throw new BusinessException("One or more members not found");
             }
         }
 
@@ -109,9 +113,7 @@ public class ChatService {
         chat.setIsPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false);
         chat.setCreatedBy(userId);
 
-        // Calculate member count (creator + other members)
-        int memberCount = 1 + (request.getMemberIds() != null ?
-            (int) request.getMemberIds().stream().filter(id -> !id.equals(userId)).count() : 0);
+        int memberCount = 1 + otherMemberIds.size();
         chat.setMemberCount(memberCount);
 
         Chat savedChat = chatRepository.save(chat);
@@ -124,41 +126,134 @@ public class ChatService {
         chatMemberRepository.save(creatorMember);
 
         // Add other members
-        if (request.getMemberIds() != null) {
-            for (Long memberId : request.getMemberIds()) {
-                if (!memberId.equals(userId)) {
-                    ChatMember member = new ChatMember();
-                    member.setChatId(savedChat.getId());
-                    member.setUserId(memberId);
-                    member.setIsAdmin(false);
-                    chatMemberRepository.save(member);
-                }
-            }
+        for (Long memberId : otherMemberIds) {
+            ChatMember member = new ChatMember();
+            member.setChatId(savedChat.getId());
+            member.setUserId(memberId);
+            member.setIsAdmin(false);
+            chatMemberRepository.save(member);
         }
 
         ChatDTO chatDTO = mapToDTO(savedChat, userId);
 
         // Notify all members about the new group via WebSocket
-        if (request.getMemberIds() != null) {
-            for (Long memberId : request.getMemberIds()) {
-                if (!memberId.equals(userId)) {
-                    ChatDTO memberChatDTO = mapToDTO(savedChat, memberId);
-                    WebSocketMessage wsMessage = new WebSocketMessage(
-                            WebSocketMessage.MessageType.CHAT_CREATED,
-                            memberChatDTO);
-                    messagingTemplate.convertAndSendToUser(String.valueOf(memberId), "/queue/chats", wsMessage);
-                }
-            }
+        for (Long memberId : otherMemberIds) {
+            ChatDTO memberChatDTO = mapToDTO(savedChat, memberId);
+            WebSocketMessage wsMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.CHAT_CREATED,
+                    memberChatDTO);
+            messagingTemplate.convertAndSendToUser(String.valueOf(memberId), "/queue/chats", wsMessage);
         }
 
         return chatDTO;
     }
 
+    /**
+     * Optimized: Batch-loads all data in 4 queries instead of ~120.
+     * Before: For 20 chats x 5 members = ~120 queries (N+1 problem)
+     * After: 4 queries total (chats, members, users, lastMessages)
+     */
     public List<ChatDTO> getUserChats(Long userId) {
+        // Query 1: Get all chats for the user
         List<Chat> chats = chatRepository.findByUserIdOrderByLastMessageAtDesc(userId);
-        return chats.stream()
-                .map(chat -> mapToDTO(chat, userId))
-                .collect(Collectors.toList());
+        if (chats.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> chatIds = chats.stream().map(Chat::getId).collect(Collectors.toList());
+
+        // Query 2: Batch load all members for all chats
+        List<ChatMember> allMembers = chatMemberRepository.findByChatIdIn(chatIds);
+        Map<Long, List<ChatMember>> membersByChatId = allMembers.stream()
+                .collect(Collectors.groupingBy(ChatMember::getChatId));
+
+        // Query 3: Batch load all user details for all members
+        Set<Long> allUserIds = allMembers.stream()
+                .map(ChatMember::getUserId)
+                .collect(Collectors.toSet());
+        List<User> allUsers = userRepository.findAllByIdIn(allUserIds);
+        Map<Long, User> usersById = allUsers.stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // Query 4: Batch load last messages for all chats
+        List<Message> lastMessages = messageRepository.findLastMessagesByChatIds(chatIds);
+        Map<Long, Message> lastMessageByChatId = lastMessages.stream()
+                .collect(Collectors.toMap(Message::getChatId, Function.identity()));
+
+        // Build unread count map from the members we already loaded
+        Map<Long, Integer> unreadCountByChatId = new HashMap<>();
+        for (ChatMember cm : allMembers) {
+            if (cm.getUserId().equals(userId)) {
+                unreadCountByChatId.put(cm.getChatId(), cm.getUnreadCount());
+            }
+        }
+
+        // Assemble DTOs in memory (no more queries)
+        return chats.stream().map(chat -> {
+            ChatDTO dto = new ChatDTO();
+            dto.setId(chat.getId());
+            dto.setType(chat.getType());
+            dto.setName(chat.getName());
+            dto.setDescription(chat.getDescription());
+            dto.setAvatar(chat.getAvatarUrl());
+            dto.setIsPrivate(chat.getIsPrivate());
+            dto.setCreatedBy(chat.getCreatedBy());
+            dto.setMemberCount(chat.getMemberCount());
+            dto.setCreatedAt(chat.getCreatedAt());
+            dto.setLastMessageAt(chat.getLastMessageAt());
+
+            // Build member DTOs from cache
+            List<ChatMember> chatMembers = membersByChatId.getOrDefault(chat.getId(), Collections.emptyList());
+            List<UserDTO> memberDTOs = chatMembers.stream()
+                    .map(cm -> {
+                        User user = usersById.get(cm.getUserId());
+                        if (user != null) {
+                            return new UserDTO(
+                                    user.getId(),
+                                    user.getUsername(),
+                                    user.getNickname(),
+                                    user.getAvatarUrl(),
+                                    user.getIsOnline(),
+                                    user.getLastSeen());
+                        }
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            dto.setMembers(memberDTOs);
+
+            // For direct chat, set name as the other user's nickname
+            if (chat.getType() == Chat.ChatType.direct && dto.getName() == null) {
+                memberDTOs.stream()
+                        .filter(u -> !u.getId().equals(userId))
+                        .findFirst()
+                        .ifPresent(user -> dto.setName(user.getNickname()));
+            }
+
+            // Set last message from cache
+            Message lastMsg = lastMessageByChatId.get(chat.getId());
+            if (lastMsg != null) {
+                User sender = usersById.get(lastMsg.getSenderId());
+                if (sender != null) {
+                    MessageDTO msgDTO = new MessageDTO();
+                    msgDTO.setId(lastMsg.getId());
+                    msgDTO.setChatId(lastMsg.getChatId());
+                    msgDTO.setSenderId(lastMsg.getSenderId());
+                    msgDTO.setSenderNickname(sender.getNickname());
+                    msgDTO.setSenderAvatar(sender.getAvatarUrl());
+                    msgDTO.setContent(lastMsg.getContent());
+                    msgDTO.setMessageType(lastMsg.getMessageType());
+                    msgDTO.setFileUrl(lastMsg.getFileUrl());
+                    msgDTO.setCreatedAt(lastMsg.getCreatedAt());
+                    dto.setLastMessage(msgDTO);
+                }
+            }
+
+            // Set unread count from cache
+            dto.setUnreadCount(unreadCountByChatId.getOrDefault(chat.getId(), 0));
+
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public ChatDTO getChatById(Long chatId, Long userId) {
@@ -173,20 +268,10 @@ public class ChatService {
         return mapToDTO(chat, userId);
     }
 
-    private Optional<Chat> findExistingDirectChat(Long userId1, Long userId2) {
-        List<ChatMember> userChats = chatMemberRepository.findByUserId(userId1);
-        for (ChatMember member : userChats) {
-            Chat chat = chatRepository.findById(member.getChatId()).orElse(null);
-            if (chat != null && chat.getType() == Chat.ChatType.direct) {
-                // Check if other user is also in this chat
-                if (chatMemberRepository.existsByChatIdAndUserId(chat.getId(), userId2)) {
-                    return Optional.of(chat);
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
+    /**
+     * Single-chat DTO mapping (used for individual chat lookups, not list).
+     * For list operations, use getUserChats() which does batch loading.
+     */
     private ChatDTO mapToDTO(Chat chat, Long currentUserId) {
         ChatDTO dto = new ChatDTO();
         dto.setId(chat.getId());
@@ -202,9 +287,13 @@ public class ChatService {
 
         // Get chat members
         List<ChatMember> members = chatMemberRepository.findByChatId(chat.getId());
+        Set<Long> memberUserIds = members.stream().map(ChatMember::getUserId).collect(Collectors.toSet());
+        List<User> users = userRepository.findAllByIdIn(memberUserIds);
+        Map<Long, User> usersById = users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
+
         List<UserDTO> memberDTOs = members.stream()
                 .map(member -> {
-                    User user = userRepository.findById(member.getUserId()).orElse(null);
+                    User user = usersById.get(member.getUserId());
                     if (user != null) {
                         return new UserDTO(
                                 user.getId(),
@@ -216,45 +305,46 @@ public class ChatService {
                     }
                     return null;
                 })
-                .filter(u -> u != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         dto.setMembers(memberDTOs);
 
         // For direct chat, set name as the other user's nickname
         if (chat.getType() == Chat.ChatType.direct && dto.getName() == null) {
-            Optional<UserDTO> otherUser = memberDTOs.stream()
+            memberDTOs.stream()
                     .filter(u -> !u.getId().equals(currentUserId))
-                    .findFirst();
-            otherUser.ifPresent(user -> dto.setName(user.getNickname()));
+                    .findFirst()
+                    .ifPresent(user -> dto.setName(user.getNickname()));
         }
 
-        // Get last message
-        List<Message> messages = messageRepository.findByChatIdOrderByCreatedAtDesc(chat.getId());
-        if (!messages.isEmpty()) {
-            Message lastMsg = messages.get(0);
-            User sender = userRepository.findById(lastMsg.getSenderId()).orElse(null);
-            if (sender != null) {
-                MessageDTO msgDTO = new MessageDTO();
-                msgDTO.setId(lastMsg.getId());
-                msgDTO.setChatId(lastMsg.getChatId());
-                msgDTO.setSenderId(lastMsg.getSenderId());
-                msgDTO.setSenderNickname(sender.getNickname());
-                msgDTO.setSenderAvatar(sender.getAvatarUrl());
-                msgDTO.setContent(lastMsg.getContent());
-                msgDTO.setMessageType(lastMsg.getMessageType());
-                msgDTO.setFileUrl(lastMsg.getFileUrl());
-                msgDTO.setCreatedAt(lastMsg.getCreatedAt());
-                dto.setLastMessage(msgDTO);
-            }
-        }
+        // Get only the last message (was loading ALL messages before)
+        messageRepository.findFirstByChatIdOrderByCreatedAtDesc(chat.getId())
+                .ifPresent(lastMsg -> {
+                    User sender = usersById.get(lastMsg.getSenderId());
+                    // If sender not in members (e.g., left group), fetch individually
+                    if (sender == null) {
+                        sender = userRepository.findById(lastMsg.getSenderId()).orElse(null);
+                    }
+                    if (sender != null) {
+                        MessageDTO msgDTO = new MessageDTO();
+                        msgDTO.setId(lastMsg.getId());
+                        msgDTO.setChatId(lastMsg.getChatId());
+                        msgDTO.setSenderId(lastMsg.getSenderId());
+                        msgDTO.setSenderNickname(sender.getNickname());
+                        msgDTO.setSenderAvatar(sender.getAvatarUrl());
+                        msgDTO.setContent(lastMsg.getContent());
+                        msgDTO.setMessageType(lastMsg.getMessageType());
+                        msgDTO.setFileUrl(lastMsg.getFileUrl());
+                        msgDTO.setCreatedAt(lastMsg.getCreatedAt());
+                        dto.setLastMessage(msgDTO);
+                    }
+                });
 
         // Get unread count for current user
-        ChatMember currentMember = chatMemberRepository
-                .findByChatIdAndUserId(chat.getId(), currentUserId)
-                .orElse(null);
-        if (currentMember != null) {
-            dto.setUnreadCount(currentMember.getUnreadCount());
-        }
+        members.stream()
+                .filter(m -> m.getUserId().equals(currentUserId))
+                .findFirst()
+                .ifPresent(member -> dto.setUnreadCount(member.getUnreadCount()));
 
         return dto;
     }

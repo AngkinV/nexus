@@ -35,14 +35,30 @@ public class MessageService {
     private final ChatMemberRepository chatMemberRepository;
     private final MessageReadStatusRepository messageReadStatusRepository;
     private final FileUploadRepository fileUploadRepository;
+    private final MessageSequenceService messageSequenceService;
 
+    /**
+     * Send a message with sequence number and client message ID for deduplication.
+     * Phase 3: Full reliability support.
+     */
     @Transactional
     public MessageDTO sendMessage(Long chatId, Long senderId, String content, Message.MessageType messageType,
-            String fileUrl) {
+            String fileUrl, String clientMsgId) {
         // Verify sender is a member
         if (!chatMemberRepository.existsByChatIdAndUserId(chatId, senderId)) {
             throw new BusinessException("error.chat.not.member");
         }
+
+        // Deduplication: check if message with this clientMsgId already exists
+        if (clientMsgId != null && !clientMsgId.isEmpty()) {
+            if (messageRepository.existsByClientMessageId(clientMsgId)) {
+                log.warn("重复消息被拒绝: clientMsgId={}", clientMsgId);
+                throw new BusinessException("error.message.duplicate");
+            }
+        }
+
+        // Generate sequence number atomically
+        long sequenceNumber = messageSequenceService.nextSequenceNumber(chatId);
 
         // Create message
         Message message = new Message();
@@ -51,6 +67,8 @@ public class MessageService {
         message.setContent(content);
         message.setMessageType(messageType);
         message.setFileUrl(fileUrl);
+        message.setClientMessageId(clientMsgId);
+        message.setSequenceNumber(sequenceNumber);
 
         Message savedMessage = messageRepository.save(message);
 
@@ -64,12 +82,11 @@ public class MessageService {
                 readStatus.setUserId(member.getUserId());
                 readStatus.setIsRead(false);
                 messageReadStatusRepository.save(readStatus);
-
-                // Increment unread count
-                member.setUnreadCount(member.getUnreadCount() + 1);
-                chatMemberRepository.save(member);
             }
         }
+
+        // Batch increment unread count for all members except sender (1 query)
+        chatMemberRepository.incrementUnreadForOthers(chatId, senderId);
 
         return mapToDTO(savedMessage);
     }
@@ -115,26 +132,11 @@ public class MessageService {
 
     @Transactional
     public void markChatMessagesAsRead(Long chatId, Long userId) {
-        List<Message> messages = messageRepository.findByChatIdOrderByCreatedAtDesc(chatId);
-        for (Message message : messages) {
-            if (!message.getSenderId().equals(userId)) {
-                MessageReadStatus readStatus = messageReadStatusRepository
-                        .findByMessageIdAndUserId(message.getId(), userId)
-                        .orElse(null);
-                if (readStatus != null && !readStatus.getIsRead()) {
-                    readStatus.setIsRead(true);
-                    readStatus.setReadAt(LocalDateTime.now());
-                    messageReadStatusRepository.save(readStatus);
-                }
-            }
-        }
+        // Bulk mark all unread messages as read in 1 query (was 2000+ queries for 1000 messages)
+        messageReadStatusRepository.bulkMarkAsRead(chatId, userId, LocalDateTime.now());
 
-        // Reset unread count
-        ChatMember member = chatMemberRepository.findByChatIdAndUserId(chatId, userId).orElse(null);
-        if (member != null) {
-            member.setUnreadCount(0);
-            chatMemberRepository.save(member);
-        }
+        // Reset unread count in 1 query (was find + set + save)
+        chatMemberRepository.resetUnreadCount(chatId, userId);
     }
 
     private MessageDTO mapToDTO(Message message) {
@@ -148,6 +150,8 @@ public class MessageService {
         dto.setMessageType(message.getMessageType());
         dto.setFileUrl(message.getFileUrl());
         dto.setCreatedAt(message.getCreatedAt());
+        dto.setSequenceNumber(message.getSequenceNumber());
+        dto.setClientMsgId(message.getClientMessageId());
 
         if (sender != null) {
             dto.setSenderNickname(sender.getNickname());

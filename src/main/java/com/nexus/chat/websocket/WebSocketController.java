@@ -1,13 +1,11 @@
 package com.nexus.chat.websocket;
 
+import com.nexus.chat.config.MessageValidationInterceptor;
 import com.nexus.chat.dto.*;
 import com.nexus.chat.model.ChatMember;
 import com.nexus.chat.model.Message;
 import com.nexus.chat.repository.ChatMemberRepository;
-import com.nexus.chat.service.ContactService;
-import com.nexus.chat.service.GroupService;
-import com.nexus.chat.service.MessageService;
-import com.nexus.chat.service.UserService;
+import com.nexus.chat.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,7 +17,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * WebSocket Controller for real-time messaging and events
+ * WebSocket Controller for real-time messaging and events.
+ *
+ * Phase 3 changes:
+ * - Unified message channel: only /topic/user.{userId}.messages (removed /topic/chat/{id})
+ * - ACK mechanism: server sends MESSAGE_ACK back to sender
+ * - Offline queue: messages queued in Redis when recipient is offline
+ * - Sequence numbers: monotonic ordering per chat
+ * - Typing indicators via user channel (not chat topic)
+ * - XSS sanitization on message content
  */
 @Slf4j
 @Controller
@@ -32,60 +38,88 @@ public class WebSocketController {
     private final ContactService contactService;
     private final GroupService groupService;
     private final ChatMemberRepository chatMemberRepository;
+    private final PresenceService presenceService;
+    private final RedisCacheService redisCacheService;
+    private final RedisMessageRelay redisMessageRelay;
 
     /**
-     * Handle sending chat messages (direct and group)
+     * Handle sending chat messages (direct and group).
+     * Unified channel: delivers to /topic/user.{userId}.messages only.
+     * Includes ACK + offline queue + sequence number + deduplication.
      */
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload Map<String, Object> payload) {
         Long chatId = null;
         Long senderId = null;
+        String clientMsgId = null;
         try {
             chatId = Long.valueOf(payload.get("chatId").toString());
             senderId = Long.valueOf(payload.get("senderId").toString());
             String content = (String) payload.get("content");
             String messageTypeStr = (String) payload.get("messageType");
             String fileUrl = (String) payload.get("fileUrl");
+            clientMsgId = (String) payload.get("clientMsgId");
+
+            // Sanitize content to prevent XSS
+            if (content != null) {
+                MessageValidationInterceptor.validateTextContent(content);
+                content = MessageValidationInterceptor.sanitizeContent(content);
+            }
+            if (fileUrl != null) {
+                MessageValidationInterceptor.validateUrl(fileUrl);
+            }
 
             Message.MessageType messageType = messageTypeStr != null
                     ? Message.MessageType.valueOf(messageTypeStr)
                     : Message.MessageType.text;
 
-            MessageDTO message = messageService.sendMessage(chatId, senderId, content, messageType, fileUrl);
+            // Send message with clientMsgId for deduplication, sequence number is generated inside
+            MessageDTO message = messageService.sendMessage(chatId, senderId, content, messageType, fileUrl, clientMsgId);
 
             WebSocketMessage wsMessage = new WebSocketMessage(
                     WebSocketMessage.MessageType.CHAT_MESSAGE,
                     message);
 
-            // Broadcast to chat room topic
-            messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
+            // Send ACK to sender first (sequenceNumber is already set in message from service)
+            WebSocketMessage ackMessage = new WebSocketMessage(
+                    WebSocketMessage.MessageType.MESSAGE_ACK,
+                    Map.of(
+                            "clientMsgId", clientMsgId != null ? clientMsgId : "",
+                            "serverMsgId", message.getId(),
+                            "chatId", chatId,
+                            "sequenceNumber", message.getSequenceNumber() != null ? message.getSequenceNumber() : 0L));
+            messagingTemplate.convertAndSend(
+                    "/topic/user." + senderId + ".messages", ackMessage);
 
-            // Also send directly to each chat member's personal topic
-            // This ensures delivery even if they haven't subscribed to the chat room
+            // Deliver to each member (unified channel - no more /topic/chat/{id})
             List<ChatMember> members = chatMemberRepository.findByChatId(chatId);
             for (ChatMember member : members) {
-                // Send to user-specific topic (more reliable than user destinations)
-                messagingTemplate.convertAndSend(
-                        "/topic/user." + member.getUserId() + ".messages",
-                        wsMessage
-                );
+                if (!member.getUserId().equals(senderId)) {
+                    if (presenceService.isUserOnline(member.getUserId())) {
+                        // Online: deliver via relay (supports cross-instance)
+                        sendToUserChannel(member.getUserId(), wsMessage);
+                    } else {
+                        // Offline: queue in Redis
+                        redisCacheService.queueOfflineMessage(member.getUserId(), wsMessage);
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("发送消息失败: chatId={}, senderId={}", chatId, senderId, e);
-            // 通知发送者消息发送失败
             if (senderId != null) {
                 WebSocketMessage errorMsg = new WebSocketMessage(
-                        WebSocketMessage.MessageType.ERROR,
+                        WebSocketMessage.MessageType.MESSAGE_DELIVERY_FAILED,
                         Map.of("chatId", chatId != null ? chatId : 0,
-                               "error", "message_send_failed",
-                               "message", e.getMessage() != null ? e.getMessage() : "Unknown error"));
+                               "clientMsgId", clientMsgId != null ? clientMsgId : "",
+                               "error", e.getMessage() != null ? e.getMessage() : "Unknown error"));
                 messagingTemplate.convertAndSend("/topic/user." + senderId + ".messages", errorMsg);
             }
         }
     }
 
     /**
-     * Handle user status updates (online/offline)
+     * Handle user status updates (online/offline).
+     * Uses Redis Presence instead of MySQL.
      */
     @MessageMapping("/user.status")
     public void updateUserStatus(@Payload Map<String, Object> payload) {
@@ -93,24 +127,33 @@ public class WebSocketController {
             Long userId = Long.valueOf(payload.get("userId").toString());
             Boolean isOnline = (Boolean) payload.get("isOnline");
 
-            userService.updateOnlineStatus(userId, isOnline);
+            // Update presence in Redis (not MySQL)
+            if (Boolean.TRUE.equals(isOnline)) {
+                String sessionId = payload.get("sessionId") != null
+                        ? payload.get("sessionId").toString() : "ws-" + userId;
+                presenceService.userConnected(userId, sessionId);
+            } else {
+                String sessionId = payload.get("sessionId") != null
+                        ? payload.get("sessionId").toString() : "ws-" + userId;
+                presenceService.userDisconnected(userId, sessionId);
+            }
 
-            WebSocketMessage wsMessage = new WebSocketMessage(
-                    isOnline ? WebSocketMessage.MessageType.USER_ONLINE : WebSocketMessage.MessageType.USER_OFFLINE,
-                    Map.of("userId", userId));
-
-            // Broadcast to all users
-            messagingTemplate.convertAndSend("/topic/users", wsMessage);
-
-            // Notify user's contacts about status change
+            // Notify contacts (uses indexed reverse lookup, not full table scan)
             contactService.notifyContactsOfStatusChange(userId, isOnline);
+
+            // Deliver offline messages when user comes online
+            if (Boolean.TRUE.equals(isOnline)) {
+                deliverOfflineMessages(userId);
+            }
         } catch (Exception e) {
-            log.error("更新用户状态失败: userId={}, isOnline={}", payload.get("userId"), payload.get("isOnline"), e);
+            log.error("更新用户状态失败: userId={}", payload.get("userId"), e);
         }
     }
 
     /**
-     * Handle typing indicator
+     * Handle typing indicator.
+     * Delivers via user channel to chat members (not /topic/chat/{id}).
+     * Uses Redis TTL for auto-expiry (5 seconds).
      */
     @MessageMapping("/chat.typing")
     public void userTyping(@Payload Map<String, Object> payload) {
@@ -121,17 +164,28 @@ public class WebSocketController {
 
             WebSocketMessage wsMessage = new WebSocketMessage(
                     WebSocketMessage.MessageType.TYPING,
-                    Map.of("userId", userId, "isTyping", isTyping));
+                    Map.of("chatId", chatId, "userId", userId, "isTyping", isTyping));
 
-            // Broadcast to chat room
-            messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
+            // Set/clear typing indicator in Redis (auto-expires in 5s)
+            if (Boolean.TRUE.equals(isTyping)) {
+                redisCacheService.setTyping(chatId, userId);
+            }
+
+            // Broadcast to chat members via user channel (relay-aware)
+            List<ChatMember> members = chatMemberRepository.findByChatId(chatId);
+            for (ChatMember member : members) {
+                if (!member.getUserId().equals(userId)) {
+                    sendToUserChannel(member.getUserId(), wsMessage);
+                }
+            }
         } catch (Exception e) {
             log.error("处理输入状态失败: chatId={}, userId={}", payload.get("chatId"), payload.get("userId"), e);
         }
     }
 
     /**
-     * Handle message read status
+     * Handle message read status.
+     * Delivers read receipt via user channel.
      */
     @MessageMapping("/message.read")
     public void messageRead(@Payload Map<String, Object> payload) {
@@ -146,10 +200,28 @@ public class WebSocketController {
                     WebSocketMessage.MessageType.MESSAGE_READ,
                     Map.of("chatId", chatId, "userId", userId, "messageId", messageId != null ? messageId : "all"));
 
-            // Broadcast to chat room
-            messagingTemplate.convertAndSend("/topic/chat/" + chatId, wsMessage);
+            // Deliver read receipt to chat members via user channel (relay-aware)
+            List<ChatMember> members = chatMemberRepository.findByChatId(chatId);
+            for (ChatMember member : members) {
+                if (!member.getUserId().equals(userId)) {
+                    sendToUserChannel(member.getUserId(), wsMessage);
+                }
+            }
         } catch (Exception e) {
             log.error("处理消息已读状态失败: chatId={}, userId={}", payload.get("chatId"), payload.get("userId"), e);
+        }
+    }
+
+    /**
+     * Handle heartbeat from client (refresh presence TTL).
+     */
+    @MessageMapping("/user.heartbeat")
+    public void heartbeat(@Payload Map<String, Object> payload) {
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            presenceService.refreshPresence(userId);
+        } catch (Exception e) {
+            log.debug("心跳处理失败: {}", e.getMessage());
         }
     }
 
@@ -212,8 +284,11 @@ public class WebSocketController {
                     WebSocketMessage.MessageType.GROUP_MEMBER_JOINED,
                     Map.of("groupId", groupId, "user", user));
 
-            // Broadcast to group
-            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+            // Broadcast to group members via user channel (relay-aware)
+            List<ChatMember> members = chatMemberRepository.findByChatId(groupId);
+            for (ChatMember member : members) {
+                sendToUserChannel(member.getUserId(), wsMessage);
+            }
         } catch (Exception e) {
             log.error("加入群组失败: groupId={}, userId={}", payload.get("groupId"), payload.get("userId"), e);
         }
@@ -228,21 +303,26 @@ public class WebSocketController {
             Long groupId = Long.valueOf(payload.get("groupId").toString());
             Long userId = Long.valueOf(payload.get("userId").toString());
 
+            // Get members before leaving
+            List<ChatMember> members = chatMemberRepository.findByChatId(groupId);
+
             groupService.leaveGroup(groupId, userId);
 
             WebSocketMessage wsMessage = new WebSocketMessage(
                     WebSocketMessage.MessageType.GROUP_MEMBER_LEFT,
                     Map.of("groupId", groupId, "userId", userId));
 
-            // Broadcast to group
-            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+            // Notify remaining members via user channel (relay-aware)
+            for (ChatMember member : members) {
+                sendToUserChannel(member.getUserId(), wsMessage);
+            }
         } catch (Exception e) {
             log.error("离开群组失败: groupId={}, userId={}", payload.get("groupId"), payload.get("userId"), e);
         }
     }
 
     /**
-     * Handle group message
+     * Handle group message (unified with chat.sendMessage for groups)
      */
     @MessageMapping("/group.message")
     public void sendGroupMessage(@Payload Map<String, Object> payload) {
@@ -251,19 +331,33 @@ public class WebSocketController {
             Long senderId = Long.valueOf(payload.get("senderId").toString());
             String content = (String) payload.get("content");
             String messageTypeStr = (String) payload.get("messageType");
+            String clientMsgId = (String) payload.get("clientMsgId");
+
+            // Sanitize content
+            if (content != null) {
+                content = MessageValidationInterceptor.sanitizeContent(content);
+            }
 
             Message.MessageType messageType = messageTypeStr != null
                     ? Message.MessageType.valueOf(messageTypeStr)
                     : Message.MessageType.text;
 
-            MessageDTO message = messageService.sendMessage(groupId, senderId, content, messageType, null);
+            // Send message with clientMsgId for deduplication
+            MessageDTO message = messageService.sendMessage(groupId, senderId, content, messageType, null, clientMsgId);
 
             WebSocketMessage wsMessage = new WebSocketMessage(
-                    WebSocketMessage.MessageType.GROUP_MESSAGE,
+                    WebSocketMessage.MessageType.CHAT_MESSAGE,
                     message);
 
-            // Broadcast to group
-            messagingTemplate.convertAndSend("/topic/group/" + groupId, wsMessage);
+            // Deliver to all group members via user channel (relay-aware)
+            List<ChatMember> members = chatMemberRepository.findByChatId(groupId);
+            for (ChatMember member : members) {
+                if (presenceService.isUserOnline(member.getUserId())) {
+                    sendToUserChannel(member.getUserId(), wsMessage);
+                } else {
+                    redisCacheService.queueOfflineMessage(member.getUserId(), wsMessage);
+                }
+            }
         } catch (Exception e) {
             log.error("发送群组消息失败: groupId={}, senderId={}", payload.get("groupId"), payload.get("senderId"), e);
         }
@@ -281,14 +375,12 @@ public class WebSocketController {
 
             Object result = contactService.addContact(userId, contactUserId, message);
 
-            // 根据返回类型决定消息类型
             if (result instanceof ContactDTO) {
                 WebSocketMessage wsMessage = new WebSocketMessage(
                         WebSocketMessage.MessageType.CONTACT_ADDED,
                         result);
                 messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
             }
-            // ContactRequestDTO 的情况已在 ContactService 中处理了 WebSocket 通知
         } catch (Exception e) {
             log.error("添加联系人失败: userId={}, contactUserId={}", payload.get("userId"), payload.get("contactUserId"), e);
             sendError(payload.get("userId"), "Failed to add contact: " + e.getMessage());
@@ -310,10 +402,23 @@ public class WebSocketController {
                     WebSocketMessage.MessageType.CONTACT_REMOVED,
                     Map.of("contactId", contactUserId));
 
-            // Notify user
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/contacts", wsMessage);
         } catch (Exception e) {
             log.error("移除联系人失败: userId={}, contactUserId={}", payload.get("userId"), payload.get("contactUserId"), e);
+        }
+    }
+
+    /**
+     * Deliver queued offline messages to a user who just came online.
+     */
+    private void deliverOfflineMessages(Long userId) {
+        List<String> offlineMessages = redisCacheService.drainOfflineQueue(userId);
+        for (String msgJson : offlineMessages) {
+            try {
+                sendToUserChannel(userId, msgJson);
+            } catch (Exception e) {
+                log.error("离线消息投递失败: userId={}", userId, e);
+            }
         }
     }
 
@@ -327,6 +432,15 @@ public class WebSocketController {
                     Map.of("message", errorMessage));
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/errors", wsMessage);
         }
+    }
+
+    /**
+     * Send a WebSocket message to a user via their unified channel.
+     * Uses RedisMessageRelay for cross-instance delivery.
+     */
+    private void sendToUserChannel(Long userId, Object payload) {
+        String destination = "/topic/user." + userId + ".messages";
+        redisMessageRelay.sendToUser(userId, destination, payload);
     }
 
 }

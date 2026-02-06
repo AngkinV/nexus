@@ -52,4 +52,26 @@ public interface ChatMemberRepository extends JpaRepository<ChatMember, Long> {
     @Query("SELECT cm FROM ChatMember cm WHERE cm.chatId = :chatId AND cm.role = 'owner'")
     Optional<ChatMember> findOwnerByChatId(@Param("chatId") Long chatId);
 
+    /**
+     * Batch find members for multiple chats (eliminates N+1)
+     */
+    List<ChatMember> findByChatIdIn(List<Long> chatIds);
+
+    /**
+     * Reset unread count for a user in a chat (single query instead of find+save)
+     */
+    @Transactional
+    @Modifying
+    @Query("UPDATE ChatMember cm SET cm.unreadCount = 0 WHERE cm.chatId = :chatId AND cm.userId = :userId")
+    void resetUnreadCount(@Param("chatId") Long chatId, @Param("userId") Long userId);
+
+    /**
+     * Increment unread count for all members except sender (batch operation)
+     */
+    @Transactional
+    @Modifying
+    @Query("UPDATE ChatMember cm SET cm.unreadCount = cm.unreadCount + 1 " +
+           "WHERE cm.chatId = :chatId AND cm.userId != :senderId")
+    void incrementUnreadForOthers(@Param("chatId") Long chatId, @Param("senderId") Long senderId);
+
 }

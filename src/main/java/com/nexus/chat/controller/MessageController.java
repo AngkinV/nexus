@@ -27,12 +27,13 @@ public class MessageController {
             String content = (String) request.get("content");
             String messageTypeStr = (String) request.get("messageType");
             String fileUrl = (String) request.get("fileUrl");
+            String clientMsgId = (String) request.get("clientMsgId");
 
             Message.MessageType messageType = messageTypeStr != null
                     ? Message.MessageType.valueOf(messageTypeStr)
                     : Message.MessageType.text;
 
-            MessageDTO message = messageService.sendMessage(chatId, senderId, content, messageType, fileUrl);
+            MessageDTO message = messageService.sendMessage(chatId, senderId, content, messageType, fileUrl, clientMsgId);
             return ResponseEntity.ok(message);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();

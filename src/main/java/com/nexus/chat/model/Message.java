@@ -35,6 +35,12 @@ public class Message {
     @Column(name = "file_url", columnDefinition = "TEXT")
     private String fileUrl;
 
+    @Column(name = "sequence_number")
+    private Long sequenceNumber;
+
+    @Column(name = "client_message_id", length = 36, unique = true)
+    private String clientMessageId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

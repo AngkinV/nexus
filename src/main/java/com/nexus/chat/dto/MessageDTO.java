@@ -22,6 +22,10 @@ public class MessageDTO {
     private LocalDateTime createdAt;
     private Boolean isRead;
 
+    // Sequence + deduplication (Phase 3)
+    private Long sequenceNumber;
+    private String clientMsgId;
+
     // 文件消息扩展字段
     private String fileId;
     private String fileName;

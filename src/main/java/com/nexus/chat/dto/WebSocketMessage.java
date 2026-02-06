@@ -41,10 +41,29 @@ public class WebSocketMessage {
         CONTACT_REMOVED,
         CONTACT_STATUS_CHANGED,
 
-        // Contact request events (好友申请事件)
-        CONTACT_REQUEST,           // 收到好友申请
-        CONTACT_REQUEST_ACCEPTED,  // 好友申请被接受
-        CONTACT_REQUEST_REJECTED,  // 好友申请被拒绝
+        // Contact request events
+        CONTACT_REQUEST,
+        CONTACT_REQUEST_ACCEPTED,
+        CONTACT_REQUEST_REJECTED,
+
+        // Message delivery ACK (Phase 3)
+        MESSAGE_ACK,              // Server confirmed receipt
+        MESSAGE_DELIVERED,        // Delivered to recipient
+        MESSAGE_DELIVERY_FAILED,  // Delivery failed
+
+        // Sync (Phase 3/4)
+        SYNC_REQUEST,             // Client requests missing messages
+        SYNC_RESPONSE,            // Server returns missed messages
+
+        // Call signaling (Phase 6)
+        CALL_OFFER,
+        CALL_ANSWER,
+        CALL_ICE_CANDIDATE,
+        CALL_REJECT,
+        CALL_HANGUP,
+        CALL_BUSY,
+        CALL_TIMEOUT,
+        CALL_RINGING,
 
         // Error
         ERROR
