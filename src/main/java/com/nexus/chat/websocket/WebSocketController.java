@@ -409,6 +409,135 @@ public class WebSocketController {
     }
 
     /**
+     * Handle call signaling (voice/video calls).
+     * Forwards signaling messages between caller and callee.
+     * Supports: CALL_INVITE, CALL_ACCEPT, CALL_REJECT, CALL_CANCEL,
+     *           CALL_BUSY, CALL_TIMEOUT, CALL_END,
+     *           CALL_OFFER, CALL_ANSWER, CALL_ICE_CANDIDATE,
+     *           CALL_MUTE, CALL_VIDEO_TOGGLE
+     */
+    @MessageMapping("/call.signal")
+    public void handleCallSignal(@Payload Map<String, Object> payload) {
+        try {
+            String typeStr = (String) payload.get("type");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> signalPayload = (Map<String, Object>) payload.get("payload");
+
+            if (typeStr == null || signalPayload == null) {
+                log.warn("Invalid call signal: missing type or payload");
+                return;
+            }
+
+            // Parse signal type
+            WebSocketMessage.MessageType signalType;
+            try {
+                signalType = WebSocketMessage.MessageType.valueOf(typeStr);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown call signal type: {}", typeStr);
+                return;
+            }
+
+            Long callerId = signalPayload.get("callerId") != null
+                    ? Long.valueOf(signalPayload.get("callerId").toString()) : null;
+            Long calleeId = signalPayload.get("calleeId") != null
+                    ? Long.valueOf(signalPayload.get("calleeId").toString()) : null;
+
+            // For some signal types, use userId/remoteUserId instead
+            if (callerId == null) {
+                callerId = signalPayload.get("userId") != null
+                        ? Long.valueOf(signalPayload.get("userId").toString()) : null;
+            }
+            if (calleeId == null) {
+                calleeId = signalPayload.get("remoteUserId") != null
+                        ? Long.valueOf(signalPayload.get("remoteUserId").toString()) : null;
+            }
+
+            log.info("Call signal received: type={}, callerId={}, calleeId={}", signalType, callerId, calleeId);
+
+            // Determine target user based on signal type
+            Long targetUserId = determineCallSignalTarget(signalType, callerId, calleeId, signalPayload);
+
+            if (targetUserId == null) {
+                log.warn("Cannot determine target user for call signal: type={}", signalType);
+                return;
+            }
+
+            // Build WebSocket message with call signal type
+            WebSocketMessage wsMessage = new WebSocketMessage(signalType, signalPayload);
+
+            // Forward to target user via their unified channel
+            if (presenceService.isUserOnline(targetUserId)) {
+                sendToUserChannel(targetUserId, wsMessage);
+                log.info("Call signal forwarded: type={}, to userId={}", signalType, targetUserId);
+            } else {
+                // If user is offline, send timeout response to caller
+                if (signalType == WebSocketMessage.MessageType.CALL_INVITE && callerId != null) {
+                    WebSocketMessage timeoutMsg = new WebSocketMessage(
+                            WebSocketMessage.MessageType.CALL_TIMEOUT,
+                            Map.of(
+                                "callId", signalPayload.get("callId"),
+                                "callerId", callerId,
+                                "calleeId", calleeId,
+                                "reason", "User is offline"
+                            ));
+                    sendToUserChannel(callerId, timeoutMsg);
+                    log.info("Callee offline, sent CALL_TIMEOUT to caller: {}", callerId);
+                }
+            }
+        } catch (Exception e) {
+            log.error("处理通话信令失败: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Determine the target user for a call signal.
+     */
+    private Long determineCallSignalTarget(WebSocketMessage.MessageType type, Long callerId, Long calleeId, Map<String, Object> payload) {
+        switch (type) {
+            // Signals from caller to callee
+            case CALL_INVITE:
+            case CALL_CANCEL:
+            case CALL_OFFER:
+                return calleeId;
+
+            // Signals from callee to caller
+            case CALL_ACCEPT:
+            case CALL_REJECT:
+            case CALL_BUSY:
+            case CALL_ANSWER:
+                return callerId;
+
+            // Bidirectional signals - determine by checking who sent it
+            case CALL_END:
+            case CALL_TIMEOUT:
+            case CALL_ICE_CANDIDATE:
+            case CALL_MUTE:
+            case CALL_VIDEO_TOGGLE:
+                // For these, the sender's ID should be in userId, target in remoteUserId
+                Long userId = payload.get("userId") != null
+                        ? Long.valueOf(payload.get("userId").toString()) : null;
+                Long remoteUserId = payload.get("remoteUserId") != null
+                        ? Long.valueOf(payload.get("remoteUserId").toString()) : null;
+
+                if (remoteUserId != null) {
+                    return remoteUserId;
+                }
+                // Fallback: send to the other party
+                if (userId != null && userId.equals(callerId)) {
+                    return calleeId;
+                } else if (userId != null && userId.equals(calleeId)) {
+                    return callerId;
+                }
+                // Last resort: try both
+                return calleeId != null ? calleeId : callerId;
+
+            default:
+                log.warn("Unknown call signal type: {}", type);
+                return calleeId;
+        }
+    }
+
+    /**
      * Deliver queued offline messages to a user who just came online.
      */
     private void deliverOfflineMessages(Long userId) {

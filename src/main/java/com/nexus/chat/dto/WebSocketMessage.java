@@ -56,14 +56,18 @@ public class WebSocketMessage {
         SYNC_RESPONSE,            // Server returns missed messages
 
         // Call signaling (Phase 6)
+        CALL_INVITE,
+        CALL_ACCEPT,
+        CALL_CANCEL,
+        CALL_END,
         CALL_OFFER,
         CALL_ANSWER,
         CALL_ICE_CANDIDATE,
         CALL_REJECT,
-        CALL_HANGUP,
         CALL_BUSY,
         CALL_TIMEOUT,
-        CALL_RINGING,
+        CALL_MUTE,
+        CALL_VIDEO_TOGGLE,
 
         // Error
         ERROR
